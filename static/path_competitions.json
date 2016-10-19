@@ -1,0 +1,41 @@
+{
+    "get": {
+        "tags": ["Static"],
+        "description": "Return queried Competitions",
+        "parameters": [
+            {
+                "name": "updatedAt.$gt",
+                "in": "query",
+                "description": "Will return Competitions updated strictly after given date. Date-time format: http://xml2rfc.ietf.org/public/rfc/html/rfc3339.html#anchor14",
+                "type": "string",
+                "format": "date-time"
+            },
+            {
+                "name": "updatedAt.$lt",
+                "in": "query",
+                "description": "Will return Competitions updated strictly before given date. Date-time format: http://xml2rfc.ietf.org/public/rfc/html/rfc3339.html#anchor14",
+                "type": "string",
+                "format": "date-time"
+            }
+        ],
+        "responses": {
+            "200": {
+                "description": "Successful request.",
+                "schema": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Competition"
+                    }
+                },
+                "headers": {
+                    "$ref": "../headers/xrate.json"
+                }
+            },
+            "400" : {"$ref": "../error/400.json"},
+            "401" : {"$ref": "../error/401.json"},
+            "403" : {"$ref": "../error/403.json"},
+            "429" : {"$ref": "../error/429.json"},
+            "500" : {"$ref": "../error/500.json"}
+        }
+    }
+}

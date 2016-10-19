@@ -1,0 +1,6 @@
+{
+    "description": "Not found – There is no resource behind this URI",
+    "schema": {
+        "$ref": "./default.json"
+    }
+}

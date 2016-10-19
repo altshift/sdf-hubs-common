@@ -1,0 +1,23 @@
+{
+    "description": "Basic definition of an api error",
+    "type": "object",
+    "required": [
+        "httpCode",
+        "httpMessage"
+    ],
+    "properties": {
+        "httpCode": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Html standard error code https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html"
+        },
+        "httpMessage": {
+            "type": "string",
+            "description": "Standard http code description https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html"
+        },
+        "apiMessage": {
+            "type": "string",
+            "description": "Specific Api message to explicit the error"
+        }
+    }
+}

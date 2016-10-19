@@ -1,0 +1,18 @@
+{
+    "type": "object",
+    "description": "A wine color used in winehub",
+    "required": [
+        "name"
+    ],
+    "properties": {
+        "name": {
+            "type": "string",
+            "description": "Unique key for this Color"
+        }
+    },
+    "allOf": [
+        {
+            "$ref": "./_translation.json"
+        }
+    ]
+}

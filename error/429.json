@@ -1,0 +1,12 @@
+{
+    "description": "Too many requests",
+    "schema": {
+        "$ref": "./default.json"
+    },
+    "headers": {
+        "Retry-After": {
+            "description": "Number of seconds you have to wait before retry",
+            "type": "integer"
+        }
+    }
+}

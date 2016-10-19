@@ -1,0 +1,24 @@
+{
+    "description": "Internal server error",
+    "schema": {
+        "description": "Definition of an api error 500",
+        "type": "object",
+        "required": [
+            "stackTrace"
+        ],
+        "allOf": [
+            {
+                "$ref": "./default.json"
+            },
+            {
+                "properties": {
+                    "stackTrace" :  {
+                        "type": "string",
+                        "description" : "Stack trace of the server error, useful for debug purpose"
+                    }
+                }
+            }
+        ]
+    }
+}
+

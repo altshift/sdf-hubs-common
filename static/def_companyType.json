@@ -1,0 +1,21 @@
+{
+    "type": "object",
+    "description": "Company type used by winehub",
+    "required": [
+        "key",
+        "name_fr",
+        "name_en",
+        "name_zh"
+    ],
+    "properties": {
+        "key": {
+            "type": "string",
+            "description": "Unique key of the company type"
+        }
+    },
+    "allOf": [
+        {
+            "$ref": "./_translation.json"
+        }
+    ]
+}

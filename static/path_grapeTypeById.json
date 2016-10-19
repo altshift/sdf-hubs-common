@@ -1,0 +1,32 @@
+{
+    "parameters": [
+        {
+            "name": "name",
+            "in": "path",
+            "description": "The grape type name on which to apply the operation",
+            "type": "integer",
+            "required": true
+        }
+    ],
+    "get": {
+        "tags": ["Static"],
+        "description": "Return GrapeType with given name",
+        "responses": {
+            "200": {
+                "description": "Successful request.",
+                "schema": {
+                    "$ref": "#/definitions/GrapeType"
+                },
+                "headers": {
+                    "$ref": "../headers/xrate.json"
+                }
+            },
+            "400" : {"$ref": "../error/400.json"},
+            "401" : {"$ref": "../error/401.json"},
+            "403" : {"$ref": "../error/403.json"},
+            "404" : {"$ref": "../error/404.json"},
+            "429" : {"$ref": "../error/429.json"},
+            "500" : {"$ref": "../error/500.json"}
+        }
+    }
+}

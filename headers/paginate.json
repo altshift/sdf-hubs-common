@@ -1,0 +1,22 @@
+{
+    "Link": {
+        "description": "first, next, prev, last page links. See here for format: https://developer.github.com/v3/#pagination",
+        "type": "string"
+    },
+    "X-Total-Item-Count": {
+        "description": "Total items count",
+        "type": "number"
+    },
+    "X-Total-Page-Count": {
+        "description": "Total page count",
+        "type": "number"
+    },
+    "X-Rate-Limit": {
+        "description": "Total request quantity allowed by day (renewed at 00h00 GMT+1)",
+        "type": "integer"
+    },
+    "X-Rate-Limit-Remaining": {
+        "description": "Remaining request quantity for today",
+        "type": "integer"
+    }
+}

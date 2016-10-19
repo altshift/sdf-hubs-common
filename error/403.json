@@ -1,0 +1,6 @@
+{
+    "description": "Forbidden",
+    "schema": {
+        "$ref": "./default.json"
+    }
+}

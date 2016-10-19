@@ -1,0 +1,10 @@
+{
+    "X-Rate-Limit": {
+        "description": "Total request quantity allowed by day (renewed at 00h00 GMT+1)",
+        "type": "integer"
+    },
+    "X-Rate-Limit-Remaining": {
+        "description": "Remaining request quantity for today",
+        "type": "integer"
+    }
+}

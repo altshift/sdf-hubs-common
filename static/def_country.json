@@ -1,0 +1,18 @@
+{
+    "type": "object",
+    "description": "A country or a state used in winehub",
+    "required": [
+        "code-ISO3166"
+    ],
+    "properties": {
+        "code-ISO3166": {
+            "type": "string",
+            "description": "Unique key for this Country (ISO 3166-1 alpha-3) or State (ISO 3166-2). Reference here: https://en.wikipedia.org/wiki/ISO_3166"
+        }
+    },
+    "allOf": [
+        {
+            "$ref": "./_translation.json"
+        }
+    ]
+}

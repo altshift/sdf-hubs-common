@@ -1,0 +1,25 @@
+{
+    "description": "Bad Request",
+    "schema": {
+        "description": "Definition of an api error 400",
+        "type": "object",
+        "required": [
+            "fields"
+        ],
+        "allOf": [
+            {
+                "$ref": "./default.json"
+            },
+            {
+                "properties": {
+                    "fields": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "./400_fields.json"
+                        }
+                    }
+                }
+            }
+        ]
+    }
+}

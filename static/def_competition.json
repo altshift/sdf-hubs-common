@@ -1,0 +1,33 @@
+{
+    "type": "object",
+    "description": "The description of a wine competition",
+    "required": [
+        "name"
+    ],
+    "properties": {
+        "name": {
+            "type": "string",
+            "description": "Unique competition key"
+        },
+        "hasMedal": {
+            "type": "boolean",
+            "description": "This competition has medals"
+        },
+        "medalValues": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "description": "The list of possible medals"
+        },
+        "hasSpecialMention": {
+            "type": "boolean",
+            "description": "True if there is a special mention"
+        }
+    },
+    "allOf": [
+        {
+            "$ref": "./_translation.json"
+        }
+    ]
+}

@@ -1,0 +1,18 @@
+{
+    "type": "object",
+    "description": "A corking type of a bottle used in winehub",
+    "required": [
+        "name"
+    ],
+    "properties": {
+        "name": {
+            "type": "string",
+            "description": "Unique key for this Corking type"
+        }
+    },
+    "allOf": [
+        {
+            "$ref": "./_translation.json"
+        }
+    ]
+}

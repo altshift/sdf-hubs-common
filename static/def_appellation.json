@@ -1,0 +1,23 @@
+{
+    "type": "object",
+    "description": "A wine Appellation used in winehub",
+    "required": [
+        "name"
+    ],
+    "properties": {
+        "name": {
+            "type": "string",
+            "description": "Unique key for this appellation"
+        },
+        "_isSuppressed": {
+            "type": "boolean",
+            "description": "If true, this appellation is deprecated but should still appear on product. However no product can now be created or updated with this value"
+        }
+    },
+    "allOf": [
+        {
+            "$ref": "./_translation.json"
+        }
+    ]
+
+}

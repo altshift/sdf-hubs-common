@@ -1,0 +1,18 @@
+{
+    "type": "object",
+    "description": "A wine Conditioning used in winehub",
+    "required": [
+        "name"
+    ],
+    "properties": {
+        "name": {
+            "type": "string",
+            "description": "Unique key for this Conditioning"
+        }
+    },
+    "allOf": [
+        {
+            "$ref": "./_translation.json"
+        }
+    ]
+}

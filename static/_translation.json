@@ -1,0 +1,16 @@
+{
+    "properties": {
+        "name_fr": {
+            "type": "string",
+            "description": "French Translation"
+        },
+        "name_en": {
+            "type": "string",
+            "description": "English Translation"
+        },
+        "name_zh": {
+            "type": "string",
+            "description": "Chinese Translation"
+        }
+    }
+}

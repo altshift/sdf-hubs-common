@@ -1,0 +1,27 @@
+{
+    "description": "Specific definition for an error on a specific field",
+    "type": "object",
+    "required": [
+        "key",
+        "type"
+    ],
+    "properties": {
+        "key": {
+            "type": "string",
+            "description": "Field name that provoked an error"
+        },
+        "type": {
+            "type": "string",
+            "enum": [
+                "validation",
+                "unrecognized-field",
+                "required"
+            ],
+            "description": "Type of error on the field"
+        },
+        "message": {
+            "type": "string",
+            "description": "Complementary message describing the error if necessary"
+        }
+    }
+}
