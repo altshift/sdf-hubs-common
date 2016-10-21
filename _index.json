@@ -1,0 +1,46 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "title": "Hubs Api",
+        "description": "API for using hubs data externally.",
+        "version": "0.1.0",
+        "license": {
+          "name": "TODO Licence sdfd?",
+          "url": "http://todourl.com"
+        },
+        "contact": {
+          "name": "Alternative Shift",
+          "url": "http://alternativeshift.fr/"
+        }
+    },
+    "securityDefinitions" : {
+        "api_key": {
+            "type": "apiKey",
+            "name": "api_key",
+            "in": "header"
+        }
+    },
+    "security": [{"api_key": []}],
+    "produces": [
+        "application/json"
+    ],
+    "basePath": "/api/v1",
+    "schemes": [
+      "http"
+    ],
+    "consumes": [
+      "application/json"
+    ],
+    "paths": {
+        "/account/checkPassword": { "$ref": "./path_checkPassword.json" },
+        "/countries": { "$ref": "./static/path_countries.json" },
+        "/countries/{name}": { "$ref": "./static/path_countryById.json" },
+        "/producer": { "$ref": "./path_producer.json" },
+        "/producer/{id}": { "$ref": "./path_producerById.json" }
+    },
+    "definitions": {
+      "Country": {
+        "$ref": "./static/def_country.json"
+      }
+    }
+}
