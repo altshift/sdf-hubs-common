@@ -1,4 +1,9 @@
 {
+    "required": [
+        "name_fr",
+        "name_en",
+        "name_zh"
+    ],
     "properties": {
         "name_fr": {
             "type": "string",
