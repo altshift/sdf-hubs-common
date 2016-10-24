@@ -1,0 +1,48 @@
+{
+    "parameters": [
+        {
+            "name": "id",
+            "in": "query",
+            "description": "List of ids of items to return",
+            "type": "array",
+            "items": {
+                "type": "integer"
+            }
+        },
+        {
+            "name": "updatedAt.$gt",
+            "in": "query",
+            "description": "Will return items updated strictly after given date. Date-time format: http://xml2rfc.ietf.org/public/rfc/html/rfc3339.html#anchor14",
+            "type": "string",
+            "format": "date-time"
+        },
+        {
+            "name": "updatedAt.$lt",
+            "in": "query",
+            "description": "Will return items updated strictly before given date. Date-time format: http://xml2rfc.ietf.org/public/rfc/html/rfc3339.html#anchor14",
+            "type": "string",
+            "format": "date-time"
+        },
+        {
+            "name": "$sort",
+            "in": "query",
+            "description": "Will sort results, format is \"propertyName ASC\" or \"propertyName DESC\", propertName can be every property that is not an array",
+            "type": "string",
+            "format": "sort",
+            "default": "createdAt ASC"
+        },
+        {
+            "name": "$limit",
+            "in": "query",
+            "description": "Limit the maximum number of items returned to this",
+            "type": "integer",
+            "default": 50
+        },
+        {
+            "name": "$skip",
+            "in": "query",
+            "description": "Skip that much items, usefull for pagination.",
+            "type": "integer"
+        }
+    ]
+}
