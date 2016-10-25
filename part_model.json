@@ -1,0 +1,25 @@
+{
+    "type": "object",
+    "description": "Base values usually used in all models",
+    "required": [
+        "id",
+        "createdAt",
+        "updatedAt"
+    ],
+    "properties": {
+        "id": {
+            "type": "integer",
+            "description": "Unique id of the item"
+        },
+        "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Creation date"
+        },
+        "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last update date"
+        }
+    }
+}
