@@ -1,13 +1,15 @@
 {
     "allOf": [
-        { "$ref": "./nameFrEn" },
+        { "$ref": "./nameFrEn.json" },
         {
             "required": [
                 "name_zh"
             ],
-            "name_zh": {
-                "type": "string",
-                "description": "Chinese Translation"
+            "properties": {
+                "name_zh": {
+                    "type": "string",
+                    "description": "Chinese Translation"
+                }
             }
         }
     ]
