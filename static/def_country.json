@@ -12,7 +12,7 @@
     },
     "allOf": [
         {
-            "$ref": "./_translation.json"
+            "$ref": "./nameFrEn.json"
         }
     ]
 }

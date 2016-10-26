@@ -1,0 +1,14 @@
+{
+    "allOf": [
+        { "$ref": "./nameFrEn" },
+        {
+            "required": [
+                "name_zh"
+            ],
+            "name_zh": {
+                "type": "string",
+                "description": "Chinese Translation"
+            }
+        }
+    ]
+}

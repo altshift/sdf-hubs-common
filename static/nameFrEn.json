@@ -1,8 +1,7 @@
 {
     "required": [
         "name_fr",
-        "name_en",
-        "name_zh"
+        "name_en"
     ],
     "properties": {
         "name_fr": {
@@ -12,10 +11,6 @@
         "name_en": {
             "type": "string",
             "description": "English Translation"
-        },
-        "name_zh": {
-            "type": "string",
-            "description": "Chinese Translation"
         }
     }
 }
