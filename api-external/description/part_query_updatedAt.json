@@ -1,0 +1,18 @@
+{
+    "parameters": [
+        {
+            "name": "updatedAt.$gt",
+            "in": "query",
+            "description": "Will return items updated strictly after given date. Date-time format: http://xml2rfc.ietf.org/public/rfc/html/rfc3339.html#anchor14",
+            "type": "string",
+            "format": "date-time"
+        },
+        {
+            "name": "updatedAt.$lt",
+            "in": "query",
+            "description": "Will return items updated strictly before given date. Date-time format: http://xml2rfc.ietf.org/public/rfc/html/rfc3339.html#anchor14",
+            "type": "string",
+            "format": "date-time"
+        }
+    ]
+}
