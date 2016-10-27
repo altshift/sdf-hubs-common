@@ -1,4 +1,5 @@
 "use strict";
+
 const resolve = require("json-refs").resolveRefsAt;
 const initializeSwagger = require("swagger-tools").initializeMiddleware;
 const resolveAllOf = require("json-schema-resolve-allof");
@@ -8,15 +9,15 @@ const resolveAllOf = require("json-schema-resolve-allof");
  * It is needed to use as a proxy in order to directly set a middleware without having to
  * wait for the real one to be ready.
  *
- * @param {object} middleWareHolder holder of the middlewares
- * @param {string} middlewareKey key in middleWareHolder for the midlleware to use
+ * @param {object} _middleWareHolder holder of the middlewares
+ * @param {string} _middlewareKey key in middleWareHolder for the midlleware to use
  * @returns {function} middleware function
  */
-function applyMiddlewareGenerator(middleWareHolder, middlewareKey) {
+function applyMiddlewareGenerator(_middleWareHolder, _middlewareKey) {
     return function applyMiddleware(_request, _response, _next) {
         // If middleware is ready, use it, else call next middleware
-        if (middleWareHolder[middlewareKey]) {
-            middleWareHolder[middlewareKey](_request, _response, _next);
+        if (_middleWareHolder[_middlewareKey]) {
+            _middleWareHolder[_middlewareKey](_request, _response, _next);
         } else {
             _next();
         }
@@ -32,7 +33,10 @@ function applyMiddlewareGenerator(middleWareHolder, middlewareKey) {
  * @returns {void}
  */
 function addDefaultController(_request, _response, _next) {
-    if (_request.swagger && !_request.swagger.operation["x-swagger-router-controller"]) {
+    const controllerNotDefined = _request.swaggerZZZ
+                                && !_request.swagger.operation["x-swagger-router-controller"];
+
+    if (controllerNotDefined) {
         const urlParts = _request.url.substring("/api/v1/".length).split("/");
 
         _request.swagger.operation["x-swagger-router-controller"] = urlParts[0];
@@ -43,13 +47,15 @@ function addDefaultController(_request, _response, _next) {
 /**
  * Load all external api middlewares
  *
- * @param {expressApp} app express application
+ * @param {expressApp} _app express application
+ * @param {string} _swaggerPath path of the swagger description
+ * @param {string} _controllerPath path of the controllers folder
  * @returns {void}
  */
-function load(app, swaggerPath, controllerPath) {
+function load(_app, _swaggerPath, _controllerPath) {
     const middleWares = {};
 
-    const swaggerObjectResolver = resolve(swaggerPath, {filter: ["relative"]});
+    const swaggerObjectResolver = resolve(_swaggerPath, {filter: ["relative"]});
 
     // Load Swagger data and prepare connect middleware
     swaggerObjectResolver.then(swaggerObject => {
@@ -59,7 +65,7 @@ function load(app, swaggerPath, controllerPath) {
             middleWares.metadata = _swaggerMiddleware.swaggerMetadata();
             middleWares.validator = _swaggerMiddleware.swaggerValidator({validateResponse: true});
             middleWares.router = _swaggerMiddleware.swaggerRouter({
-                controllers: controllerPath,
+                controllers: _controllerPath,
                 useStubs: false
             });
             middleWares.ui = _swaggerMiddleware.swaggerUi();
@@ -67,11 +73,12 @@ function load(app, swaggerPath, controllerPath) {
     }).catch(console.error);
 
     // Use middleware when they are ready
-    app.use(applyMiddlewareGenerator(middleWares, "metadata"));
-    app.use(addDefaultController);
-    app.use(applyMiddlewareGenerator(middleWares, "validator"));
-    app.use(applyMiddlewareGenerator(middleWares, "router"));
-    app.use(applyMiddlewareGenerator(middleWares, "ui"));
+    _app.use(applyMiddlewareGenerator(middleWares, "metadata"));
+    _app.use(addDefaultController);
+    _app.use(applyMiddlewareGenerator(middleWares, "validator"));
+    _app.use(applyMiddlewareGenerator(middleWares, "router"));
+    _app.use(applyMiddlewareGenerator(middleWares, "ui"));
 }
 
 exports.load = load;
+

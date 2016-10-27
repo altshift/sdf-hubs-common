@@ -11,33 +11,33 @@ const codeToMessage = {
 /**
  * Build an error object to be sent to the client
  *
- * @param {number} $httpCode http error code
- * @param {string} $apiMessage info message from api
+ * @param {number} _httpCode http error code
+ * @param {string} _apiMessage info message from api
  *
  * @returns {object} the error object
  *
  */
-function error($httpCode, $apiMessage = "") {
+function error(_httpCode, _apiMessage = "") {
     return {
-        apiMessage: $apiMessage,
-        httpCode: $httpCode,
-        httpMessage: codeToMessage[`${$httpCode}`]
+        apiMessage: _apiMessage,
+        httpCode: _httpCode,
+        httpMessage: codeToMessage[`${_httpCode}`]
     };
 }
 
 /**
  * Build a code 400 error object to be sent to the client
  *
- * @param {string} $apiMessage info message from api
+ * @param {string} _apiMessage info message from api
  * @param {object[]} fields array of validation errors
  *
  * @returns {object} the error object
  *
  */
-function error400($apiMessage, fields) {
-    const clientError = error(400, $apiMessage); // eslint-disable-line no-magic-numbers
+function error400(_apiMessage, _fields) {
+    const clientError = error(400, _apiMessage); // eslint-disable-line no-magic-numbers
 
-    clientError.fields = fields;
+    clientError.fields = _fields;
 
     return clientError;
 }
@@ -45,34 +45,33 @@ function error400($apiMessage, fields) {
 /**
  * Build a 400 clientError from a javascript error from a swagger validation
  *
- * @param {Error} $jsError javascript error object
+ * @param {Error} _jsError swagger validation javascript error object
  * @returns {object} the error object
  */
-function error400FromJsError($jsError) {
-    const errors = $jsError.results.errors;
+function error400FromJsError({message, results: {errors}}) {
     const fieldError = [];
 
-    errors.forEach(swaggerError => {
-        fieldError.push({
+    errors.map(swaggerError => {
+        return {
             key: swaggerError.path.join("."),
             message: swaggerError.message,
             type: swaggerError.code
-        });
+        };
     });
 
-    return error400($jsError.message, fieldError);
+    return error400(message, fieldError);
 }
 
 /**
  * Build a code 500 error object to be sent to the client
  *
- * @param {object|string} $errorOrMessage Javascript error that occured or message
+ * @param {object|string} _errorOrMessage Javascript error that occured or message
  *
  * @returns {object} the error object
  *
  */
-function error500($errorOrMessage) {
-    const javascriptError = typeof $error === "object" ? $errorOrMessage : new Error($errorOrMessage);
+function error500(_errorOrMessage) {
+    const javascriptError = typeof _error === "object" ? _errorOrMessage : new Error(_errorOrMessage);
     const clientError = error(500, javascriptError.message); // eslint-disable-line no-magic-numbers
 
     clientError.stackTrace = javascriptError.stack;
@@ -83,18 +82,18 @@ function error500($errorOrMessage) {
 /**
  * Return true if given object is a valid client error
  *
- * @param {object} $error The error to test
+ * @param {any} _error The error to test
  *
  * @returns {boolean} true if error is a client Error
  *
  */
-function isClientError($error) {
-    const isObject = typeof $error === "object";
-    const hasHttpCode = isObject && typeof $error.httpCode === "number";
-    const hasHttpMessage = isObject && typeof $error.httpMessage === "string";
+function isClientError(_error) {
+    const isObject = typeof _error === "object";
+    const hasHttpCode = isObject && typeof _error.httpCode === "number";
+    const hasHttpMessage = isObject && typeof _error.httpMessage === "string";
 
-    const isError500 = isObject && $error.httpCode !== 500; // eslint-disable-line no-magic-numbers
-    const hasStackIf500 = isObject && (isError500 || typeof $error.stackTrace === "string");
+    const isError500 = isObject && _error.httpCode !== 500; // eslint-disable-line no-magic-numbers
+    const hasStackIf500 = isObject && (isError500 || typeof _error.stackTrace === "string");
 
     return hasHttpCode && hasHttpMessage && hasStackIf500;
 }
@@ -102,23 +101,23 @@ function isClientError($error) {
 /**
  * Transform an error or message to a client error
  *
- * @param {object|string} $errorOrMessage Error that occured or message
+ * @param {object|string} _errorOrMessage Error that occured or message
  *
  * @returns {object} the error object
  *
  */
-function toClientError($errorOrMessage) {
+function toClientError(_errorOrMessage) {
     let clientError;
 
-    if (isClientError($errorOrMessage)) {
-        clientError = $errorOrMessage;
-    } else if (typeof $errorOrMessage === "string") {
-        clientError = error500($errorOrMessage);
+    if (isClientError(_errorOrMessage)) {
+        clientError = _errorOrMessage;
+    } else if (typeof _errorOrMessage === "string") {
+        clientError = error500(_errorOrMessage);
     } else {
-        const jsError = $errorOrMessage;
+        const jsError = _errorOrMessage;
         const isValidationFail = jsError.failedValidation;
         const resFailMessage = "Response validation failed";
-        const isResponseValidationFail = isValidationFail && jsError.message.indexOf(resFailMessage);
+        const isResponseValidationFail = isValidationFail && jsError.message.includes(resFailMessage);
 
         if (isResponseValidationFail) {
             clientError = error500(jsError);
@@ -133,30 +132,32 @@ function toClientError($errorOrMessage) {
 }
 
 /**
- *
- * @param {string} _apiPath path of the api to detect
+ * Generate a connect middleware to handle error.
+ * There is no parameters for now but it is the correct way to expose a middleware.
  *
  * @returns {void}
  */
 function apiErrorMiddlewareGenerator() {
-    return function errorMiddleware($error, $request, $result, $next) {
-        const isApiCall = $request.swagger !== undefined;
+    return function errorMiddleware(_error, _request, _result, _next) {
+        const isApiCall = _request.swagger !== undefined;
 
         if (isApiCall) {
-            const clientError = toClientError($error);
+            const clientError = toClientError(_error);
 
-            // console.error($error.message, Object.keys($error), $error.failedValidation, $error.results, $error.code);
-            $result.status(clientError.httpCode).send(clientError);
+            _result
+                .status(clientError.httpCode)
+                .send(clientError);
         } else {
-            $next($error);
+            _next(_error);
         }
     };
 }
 
-exports.error = error;
-exports.error500 = error500;
-exports.error400 = error400;
-exports.isClientError = isClientError;
-exports.toClientError = toClientError;
-
-exports.apiErrorMiddlewareGenerator = apiErrorMiddlewareGenerator;
+export default {
+    apiErrorMiddlewareGenerator,
+    error,
+    error400,
+    error500,
+    isClientError,
+    toClientError
+};
