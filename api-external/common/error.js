@@ -153,7 +153,7 @@ function apiErrorMiddlewareGenerator() {
     };
 }
 
-export default {
+module.exports = {
     apiErrorMiddlewareGenerator,
     error,
     error400,

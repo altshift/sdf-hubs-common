@@ -33,7 +33,7 @@ function applyMiddlewareGenerator(_middleWareHolder, _middlewareKey) {
  * @returns {void}
  */
 function addDefaultController(_request, _response, _next) {
-    const controllerNotDefined = _request.swaggerZZZ
+    const controllerNotDefined = _request.swagger
                                 && !_request.swagger.operation["x-swagger-router-controller"];
 
     if (controllerNotDefined) {
