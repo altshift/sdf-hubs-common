@@ -2,7 +2,7 @@
 
 // npm dependencies
 const {resolveRefsAt} = require("json-refs");
-const {initializeSwagger} = require("swagger-tools");
+const {initializeMiddleware} = require("swagger-tools");
 const resolveAllOf = require("json-schema-resolve-allof");
 
 // local dependencies
@@ -98,7 +98,7 @@ function load(_app, _swaggerPath, _controllerPath) {
     swaggerObjectResolver.then(swaggerObject => {
         const finalDesc = resolveAllOf(swaggerObject.resolved);
 
-        initializeSwagger(finalDesc, _swaggerMiddleware => {
+        initializeMiddleware(finalDesc, _swaggerMiddleware => {
             middleWares.metadata = _swaggerMiddleware.swaggerMetadata();
             middleWares.validator = _swaggerMiddleware.swaggerValidator({validateResponse: true});
             middleWares.router = _swaggerMiddleware.swaggerRouter({
