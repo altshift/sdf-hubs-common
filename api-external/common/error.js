@@ -4,6 +4,7 @@ const codeToMessage = {
     "400": "Bad Request",
     "401": "Unauthorized (please authenticate)",
     "403": "Forbidden",
+    "404": "Not Found",
     "429": "Too many requests",
     "500": "Internal server error"
 };
@@ -17,27 +18,47 @@ const codeToMessage = {
  * @returns {object} the error object
  *
  */
-function error(_httpCode, _apiMessage = "") {
-    return {
-        apiMessage: _apiMessage,
+function error(_httpCode, _apiMessage = null) {
+    const clientError = {
         httpCode: _httpCode,
         httpMessage: codeToMessage[`${_httpCode}`]
     };
+
+    if (_apiMessage) {
+        clientError.apiMessage = _apiMessage;
+    }
+
+    return clientError;
 }
 
 /**
- * Build a code 400 error object to be sent to the client
+ * Build a code validation error object to be sent to the client
  *
  * @param {string} _apiMessage info message from api
- * @param {object[]} fields array of validation errors
+ * @param {object[]} _fields array of validation errors
+ * @param {Error} _httpCode http code of the error
  *
  * @returns {object} the error object
  *
  */
-function error400(_apiMessage, _fields) {
-    const clientError = error(400, _apiMessage); // eslint-disable-line no-magic-numbers
+function validationError(_apiMessage, _fields, _httpCode) {
+    const clientError = error(_httpCode, _apiMessage); // eslint-disable-line no-magic-numbers
 
     clientError.fields = _fields;
+
+    return clientError;
+}
+
+/**
+ * Build a code 404 error object to be sent to the client
+ *
+ * @param {string} _apiMessage info message from api
+ *
+ * @returns {object} the error object
+ *
+ */
+function error404(_apiMessage) {
+    const clientError = error(404, _apiMessage); // eslint-disable-line no-magic-numbers
 
     return clientError;
 }
@@ -46,20 +67,21 @@ function error400(_apiMessage, _fields) {
  * Build a 400 clientError from a javascript error from a swagger validation
  *
  * @param {Error} _jsError swagger validation javascript error object
+ * @param {Error} _httpCode http code of the error
  * @returns {object} the error object
  */
-function error400FromJsError({message, results: {errors}}) {
-    const fieldError = [];
+function validationErrorFromJsError(_jsError, _httpCode) {
+    const fieldError = _jsError.results.errors.map(({description, message, path, code}) => {
+        const validationMessage = description ? `${message} => ${description}` : message;
 
-    errors.map(swaggerError => {
         return {
-            key: swaggerError.path.join("."),
-            message: swaggerError.message,
-            type: swaggerError.code
+            key: path.join("."),
+            message: validationMessage,
+            type: code
         };
     });
 
-    return error400(message, fieldError);
+    return validationError(_jsError.message, fieldError, _httpCode);
 }
 
 /**
@@ -71,7 +93,8 @@ function error400FromJsError({message, results: {errors}}) {
  *
  */
 function error500(_errorOrMessage) {
-    const javascriptError = typeof _error === "object" ? _errorOrMessage : new Error(_errorOrMessage);
+    const isJsError = typeof _errorOrMessage === "object";
+    const javascriptError = isJsError ? _errorOrMessage : new Error(_errorOrMessage);
     const clientError = error(500, javascriptError.message); // eslint-disable-line no-magic-numbers
 
     clientError.stackTrace = javascriptError.stack;
@@ -114,15 +137,15 @@ function toClientError(_errorOrMessage) {
     } else if (typeof _errorOrMessage === "string") {
         clientError = error500(_errorOrMessage);
     } else {
-        const jsError = _errorOrMessage;
+        const jsError = _errorOrMessage || {};
         const isValidationFail = jsError.failedValidation;
         const resFailMessage = "Response validation failed";
         const isResponseValidationFail = isValidationFail && jsError.message.includes(resFailMessage);
 
         if (isResponseValidationFail) {
-            clientError = error500(jsError);
+            clientError = validationErrorFromJsError(jsError, 500);// eslint-disable-line no-magic-numbers
         } else if (isValidationFail) {
-            clientError = error400FromJsError(jsError);
+            clientError = validationErrorFromJsError(jsError, 400);// eslint-disable-line no-magic-numbers
         } else {
             clientError = error500(jsError);
         }
@@ -138,13 +161,17 @@ function toClientError(_errorOrMessage) {
  * @returns {void}
  */
 function apiErrorMiddlewareGenerator() {
-    return function errorMiddleware(_error, _request, _result, _next) {
+    return function errorMiddleware(_error, _request, _response, _next) {
         const isApiCall = _request.swagger !== undefined;
 
         if (isApiCall) {
             const clientError = toClientError(_error);
 
-            _result
+            if (clientError.httpCode === 500) { // eslint-disable-line no-magic-numbers
+                console.error(clientError);// eslint-disable-line no-console
+            }
+
+            _response
                 .status(clientError.httpCode)
                 .send(clientError);
         } else {
@@ -153,11 +180,59 @@ function apiErrorMiddlewareGenerator() {
     };
 }
 
+/**
+ * @param {function} _next connect next middleware cb
+ * @param {string} _error the error to deal with
+ * @returns {void}
+ */
+function send(_next, _error) {
+    _next(_error);
+}
+
+/**
+ * @param {function} _next connect next middleware cb
+ * @param {string} _message (optional) message of the error
+ * @returns {void}
+ */
+function send404(_next, _message = null) {
+    send(_next, error404(_message));
+}
+
+/**
+ * Generate a function that know how to deal with errors,
+ * can be used directly in error callbacks
+ *
+ * @param {function} _next connect next middleware cb
+ * @param {function} _callbackIfOk connect response
+ * @returns {function} a callback that wan deal with errors
+ */
+function handleAsync(_next, _callbackIfOk = null) {
+    return (...args) => {
+        const argError = args[0];
+
+        if (argError) {
+            send(_next, argError);
+        } else if (_callbackIfOk) {
+            const otherArgs = args.splice(1);
+
+            _callbackIfOk(otherArgs);
+        }
+    };
+}
+
+
+
+
 module.exports = {
     apiErrorMiddlewareGenerator,
     error,
-    error400,
+    error404,
     error500,
+    handleAsync,
     isClientError,
-    toClientError
+    send,
+    send404,
+    toClientError,
+    validationError,
+    validationErrorFromJsError
 };

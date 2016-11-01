@@ -1,8 +1,12 @@
 "use strict";
 
+// npm dependencies
 const resolve = require("json-refs").resolveRefsAt;
 const initializeSwagger = require("swagger-tools").initializeMiddleware;
 const resolveAllOf = require("json-schema-resolve-allof");
+
+// local dependencies
+const apiHelpers = require("./apiHelpers");
 
 /**
  * Function that return a proxy middleware waiting for the availability of the middleware given in parameters.
@@ -24,22 +28,56 @@ function applyMiddlewareGenerator(_middleWareHolder, _middlewareKey) {
     };
 }
 
+
 /**
- * Add default controller name for operations (because swagger is too dumb to do it)
+ * @param {object} _swagger swagger request object
+ * @param {string} _method http method of the request
+ * @returns {void}
+ */
+function setSwaggerController(_swagger, _method) {
+    const controllerNotDefined = _swagger && !_swagger.operation["x-swagger-router-controller"];
+
+    if (controllerNotDefined) {
+        const urlParts = _swagger.apiPath.split("/");
+
+        _swagger.operation["x-swagger-router-controller"] = urlParts[1];
+        if (_method === "GET" && urlParts[2] === "{id}") {
+            _swagger.operation.operationId = "getByIdRoute";
+        } else {
+            _swagger.operation.operationId = `${_method.toLowerCase()}Route`;
+        }
+    }
+}
+
+/**
+ * Set the db collection in asData guessed from the given url
+ * @param {object} _asData altshift data we set to ease the request handling
+ * @param {string} _url url to find
+ * @returns {void}
+ */
+function setCollectionFromUrl(_asData, _url) {
+    const collectionName = apiHelpers.guessCollectionFromUrl(_url);
+
+    _asData.collectionName = collectionName;
+    _asData.collection = global[collectionName];
+}
+
+/**
+ * Enrich swagger request object with data usefull for controllers
  *
  * @param {object} _request connect request
  * @param {object} _response connect response
  * @param {function} _next connect next callback
  * @returns {void}
  */
-function addDefaultController(_request, _response, _next) {
-    const controllerNotDefined = _request.swagger
-                                && !_request.swagger.operation["x-swagger-router-controller"];
+function enrichSwaggerRequest(_request, _response, _next) {
+    const isApiRequest = _request.swagger;
 
-    if (controllerNotDefined) {
-        const urlParts = _request.url.substring("/api/v1/".length).split("/");
+    _request.asData = {};
 
-        _request.swagger.operation["x-swagger-router-controller"] = urlParts[0];
+    if (isApiRequest) {
+        setSwaggerController(_request.swagger, _request.method);
+        setCollectionFromUrl(_request.asData, _request.swagger.apiPath);
     }
     _next();
 }
@@ -74,7 +112,7 @@ function load(_app, _swaggerPath, _controllerPath) {
 
     // Use middleware when they are ready
     _app.use(applyMiddlewareGenerator(middleWares, "metadata"));
-    _app.use(addDefaultController);
+    _app.use(enrichSwaggerRequest);
     _app.use(applyMiddlewareGenerator(middleWares, "validator"));
     _app.use(applyMiddlewareGenerator(middleWares, "router"));
     _app.use(applyMiddlewareGenerator(middleWares, "ui"));
