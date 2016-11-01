@@ -1,8 +1,8 @@
 "use strict";
 
 // npm dependencies
-const resolve = require("json-refs").resolveRefsAt;
-const initializeSwagger = require("swagger-tools").initializeMiddleware;
+const {resolveRefsAt} = require("json-refs");
+const {initializeSwagger} = require("swagger-tools");
 const resolveAllOf = require("json-schema-resolve-allof");
 
 // local dependencies
@@ -28,23 +28,22 @@ function applyMiddlewareGenerator(_middleWareHolder, _middlewareKey) {
     };
 }
 
-
 /**
- * @param {object} _swagger swagger request object
- * @param {string} _method http method of the request
+ * @param {object} _swaggerMeta swagger request object
+ * @param {string} _httpMethod http method of the request
  * @returns {void}
  */
-function setSwaggerController(_swagger, _method) {
-    const controllerNotDefined = _swagger && !_swagger.operation["x-swagger-router-controller"];
+function setSwaggerController(_swaggerMeta, _httpMethod) {
+    const controllerNotDefined = _swaggerMeta && !_swaggerMeta.operation["x-swagger-router-controller"];
 
     if (controllerNotDefined) {
-        const urlParts = _swagger.apiPath.split("/");
+        const urlParts = _swaggerMeta.apiPath.split("/");
 
-        _swagger.operation["x-swagger-router-controller"] = urlParts[1];
-        if (_method === "GET" && urlParts[2] === "{id}") {
-            _swagger.operation.operationId = "getByIdRoute";
+        _swaggerMeta.operation["x-swagger-router-controller"] = urlParts[1];
+        if (_httpMethod === "GET" && urlParts[2] === "{id}") {
+            _swaggerMeta.operation.operationId = "getByIdRoute";
         } else {
-            _swagger.operation.operationId = `${_method.toLowerCase()}Route`;
+            _swaggerMeta.operation.operationId = `${_httpMethod.toLowerCase()}Route`;
         }
     }
 }
@@ -71,7 +70,7 @@ function setCollectionFromUrl(_asData, _url) {
  * @returns {void}
  */
 function enrichSwaggerRequest(_request, _response, _next) {
-    const isApiRequest = _request.swagger;
+    const isApiRequest = _request.swagger !== undefined;
 
     _request.asData = {};
 
@@ -93,7 +92,7 @@ function enrichSwaggerRequest(_request, _response, _next) {
 function load(_app, _swaggerPath, _controllerPath) {
     const middleWares = {};
 
-    const swaggerObjectResolver = resolve(_swaggerPath, {filter: ["relative"]});
+    const swaggerObjectResolver = resolveRefsAt(_swaggerPath, {filter: ["relative"]});
 
     // Load Swagger data and prepare connect middleware
     swaggerObjectResolver.then(swaggerObject => {
@@ -108,7 +107,7 @@ function load(_app, _swaggerPath, _controllerPath) {
             });
             middleWares.ui = _swaggerMiddleware.swaggerUi();
         });
-    }).catch(console.error);
+    }).catch(console.error); // eslint-disable-line no-console
 
     // Use middleware when they are ready
     _app.use(applyMiddlewareGenerator(middleWares, "metadata"));
