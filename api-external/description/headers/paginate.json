@@ -3,6 +3,10 @@
         "description": "first, next, prev, last page links. See here for format: https://developer.github.com/v3/#pagination",
         "type": "string"
     },
+    "X-Current-Page": {
+        "description": "Current page",
+        "type": "number"
+    },
     "X-Total-Item-Count": {
         "description": "Total items count",
         "type": "number"

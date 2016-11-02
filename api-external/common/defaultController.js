@@ -2,7 +2,7 @@
 
 // local dependencies
 const clientError = require("./error");
-const apiHelpers = require("./apiHelpers");
+const {populate, getParamsObject, getPaginationLinks} = require("./apiHelpers");
 
 /**
  * Send to the client the requested document by id,
@@ -18,6 +18,7 @@ function getByIdRoute(_request, _response, _next) {
     const id = _request.swagger.params.id.value;
     const query = {where: {id}};
     const collection = _request.asData.collection;
+    const collectionHasSoftDelete = collection.attributes._isSuppressed !== undefined;
 
     if (!collection) {
         _next(`Unable to find collection "${_request.asData.collectionName}" `
@@ -26,10 +27,13 @@ function getByIdRoute(_request, _response, _next) {
         return;
     }
 
+    if (collectionHasSoftDelete) {
+        query.where._isSuppressed = false;
+    }
+
     const queryPromise = collection.findOne(query);
 
-    apiHelpers
-        .populate(queryPromise, collection)
+    populate(queryPromise, collection)
         .then(_result => {
             const itemExists = _result;
 
@@ -50,6 +54,40 @@ function getByIdRoute(_request, _response, _next) {
  * @returns {void}
  */
 function getRoute(_request, _response, _next) {
+    const params = getParamsObject(_request.swagger);
+    const {collection, collectionName} = _request.asData;
+    const collectionHasSoftDelete = collection.attributes._isSuppressed !== undefined;
+
+    if (!collection) {
+        _next(`Unable to find collection "${collectionName}" `
+            + `from Url "${_request.url}" in default getByIdRoute, maybe the route should be overloaded?`);
+
+        return;
+    }
+
+    if (collectionHasSoftDelete) {
+        params.where._isSuppressed = false;
+    }
+
+    const queryPromise = collection.find(params);
+    const queryCountPromise = collection.count(params.where);
+
+    populate(queryPromise, collection)
+        .then(_result => {
+            return queryCountPromise.then(_countResult => {
+                const url = _request.getFullUrl();
+
+                _response
+                    .set({
+                        Link: getPaginationLinks(url, params.skip, params.limit, _countResult),
+                        "X-Current-Page": Math.ceil((params.skip || 0) / params.limit),
+                        "X-Total-Item-Count": _countResult,
+                        "X-Total-Page-Count": Math.ceil(_countResult / params.limit)
+                    })
+                    .send(_result);
+            });
+        })
+        .catch(clientError.handleAsync(_next));
 }
 
 /**

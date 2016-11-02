@@ -1,5 +1,8 @@
 "use strict";
 
+// node dependencies
+const url = require("url");
+
 // npm dependencies
 const {resolveRefsAt} = require("json-refs");
 const {initializeMiddleware} = require("swagger-tools");
@@ -77,6 +80,14 @@ function enrichSwaggerRequest(_request, _response, _next) {
     if (isApiRequest) {
         setSwaggerController(_request.swagger, _request.method);
         setCollectionFromUrl(_request.asData, _request.swagger.apiPath);
+
+        _request.getFullUrl = () => {
+            return url.format({
+                host: _request.get("host"),
+                pathname: _request.originalUrl,
+                protocol: _request.protocol
+            });
+        };
     }
     _next();
 }
