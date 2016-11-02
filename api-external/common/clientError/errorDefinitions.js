@@ -1,6 +1,8 @@
 "use strict";
+/* eslint-disable no-magic-numbers */
 
-const codeToMessage = {
+/* ****************************************** Const definitions ****************************************** */
+const httpCodeToMessage = {
     "400": "Bad Request",
     "401": "Unauthorized (please authenticate)",
     "403": "Forbidden",
@@ -9,6 +11,19 @@ const codeToMessage = {
     "500": "Internal server error"
 };
 
+const validationErrorType = {
+    REQUIRED: "required",
+    UNRECOGNIZED: "unrecognized-field",
+    VALIDATION: "validation"
+};
+
+const swaggerCodeToAsType = { // eslint-disable object-curly-newline
+    OBJECT_MISSING_REQUIRED_PROPERTY: "required"
+};
+
+const defaultTooManyArgumentsMessage = "Too many arguments, field may be unwanted";
+
+/* ****************************************** Logic ****************************************** */
 /**
  * Build an error object to be sent to the client
  *
@@ -21,7 +36,7 @@ const codeToMessage = {
 function error(_httpCode, _apiMessage = null) {
     const clientError = {
         httpCode: _httpCode,
-        httpMessage: codeToMessage[`${_httpCode}`]
+        httpMessage: httpCodeToMessage[`${_httpCode}`]
     };
 
     if (_apiMessage) {
@@ -44,7 +59,7 @@ function error(_httpCode, _apiMessage = null) {
 function validationError(_apiMessage, _fields, _httpCode) {
     const clientError = error(_httpCode, _apiMessage);
 
-    clientError.fields = _fields;
+    clientError.fields = _fields || [];
 
     return clientError;
 }
@@ -81,7 +96,7 @@ function validationErrorFromJsError(_jsError, _httpCode) {
             return {
                 key: path.join("."),
                 message: validationMessage,
-                type: code
+                type: swaggerCodeToAsType[code] || "validation"
             };
         });
     }
@@ -127,70 +142,23 @@ function isClientError(_error) {
 }
 
 /**
- * Transform an error or message to a client error
- *
- * @param {object|string} _errorOrMessage Error that occured or message
+ * @param {object} _params Object olding swagger parameters
+ * @param {string} _apiMessage api message for error
+ * @param {string} _fieldMessage Message for every field error
  *
  * @returns {object} the error object
- *
  */
-function toClientError(_errorOrMessage) {
-    let clientError;
+function tooManyArgumentsError(_params, _apiMessage, _fieldMessage = defaultTooManyArgumentsMessage) {
+    const fields = Object.keys(_params)
+        .map(_key => {
+            return {
+                code: "AS_TOO_MANY_ARGUMENTS",
+                key: _key,
+                message: _fieldMessage
+            };
+        });
 
-    if (isClientError(_errorOrMessage)) {
-        clientError = _errorOrMessage;
-    } else if (typeof _errorOrMessage === "string") {
-        clientError = error500(_errorOrMessage);
-    } else {
-        const jsError = _errorOrMessage || {};
-        const isValidationFail = jsError.failedValidation;
-        const resFailMessage = "Response validation failed";
-        const isResponseValidationFail = isValidationFail && jsError.message.includes(resFailMessage);
-
-        if (isResponseValidationFail) {
-            clientError = validationErrorFromJsError(jsError, 500);// eslint-disable-line no-magic-numbers
-        } else if (isValidationFail) {
-            clientError = validationErrorFromJsError(jsError, 400);// eslint-disable-line no-magic-numbers
-        } else {
-            clientError = error500(jsError);
-        }
-    }
-
-    return clientError;
-}
-
-/**
- * Generate a connect middleware to handle error.
- * There is no parameters for now but it is the correct way to expose a middleware.
- *
- * @returns {void}
- */
-function apiErrorMiddlewareGenerator() {
-    return function errorMiddleware(_error, _request, _response, _next) {
-        const isApiCall = _request.swagger !== undefined;
-
-        if (isApiCall) {
-            const clientError = toClientError(_error);
-            // stringify to have a consistent size to set the length of the Content
-            const stringifiedClientError = JSON.stringify(clientError);
-            // needed because it seems that the length is not recalculated
-            // if the initial send was a string/html*/
-            const contentLength = stringifiedClientError.length;
-
-            if (clientError.httpCode === 500) { // eslint-disable-line no-magic-numbers
-                console.error(clientError); // eslint-disable-line no-console
-            }
-            _response
-                .set("Content-length", contentLength)
-                 // needed because it seems that the type is not recalculated if
-                 // the initial send was a string/html
-                .set("Content-Type", "application/json")
-                .status(clientError.httpCode)
-                .send(stringifiedClientError);
-        } else {
-            _next(_error);
-        }
-    };
+    return validationError(_apiMessage, fields, 400);// eslint-disable-line no-magic-numbers
 }
 
 /**
@@ -212,13 +180,23 @@ function send404(_next, _message = null) {
 }
 
 /**
+ * @param {function} _next connect next middleware cb
+ * @param {string} _message message of the error
+ * @param {string} _fields list of field errors
+ * @returns {void}
+ */
+function send400(_next, _message, _fields) {
+    send(_next, validationError(_message, _fields, 400));
+}
+
+/**
  * Send a 403 error (Forbidden)
  * @param {function} _next connect next middleware cb
  * @param {string} _message (optional) message of the error
  * @returns {void}
  */
 function send403(_next, _message = null) {
-    send(_next, error(403, _message)); // eslint-disable-line no-magic-numbers
+    send(_next, error(403, _message));
 }
 
 /**
@@ -229,7 +207,7 @@ function send403(_next, _message = null) {
  * @param {function} _callbackIfOk connect response
  * @returns {function} a callback that wan deal with errors
  */
-function handleAsync(_next, _callbackIfOk = null) {
+function handleErrorAsync(_next, _callbackIfOk = null) {
     return (...args) => {
         const argError = args[0];
 
@@ -244,16 +222,17 @@ function handleAsync(_next, _callbackIfOk = null) {
 }
 
 module.exports = {
-    apiErrorMiddlewareGenerator,
     error,
     error404,
     error500,
-    handleAsync,
+    handleErrorAsync,
     isClientError,
     send,
+    send400,
     send403,
     send404,
-    toClientError,
+    tooManyArgumentsError,
     validationError,
-    validationErrorFromJsError
+    validationErrorFromJsError,
+    validationErrorType
 };
