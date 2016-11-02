@@ -71,15 +71,20 @@ function error404(_apiMessage) {
  * @returns {object} the error object
  */
 function validationErrorFromJsError(_jsError, _httpCode) {
-    const fieldError = _jsError.results.errors.map(({description, message, path, code}) => {
-        const validationMessage = description ? `${message} => ${description}` : message;
+    const isFieldError = _jsError.results !== undefined && Array.isArray(_jsError.results.errors);
+    let fieldError = null;
 
-        return {
-            key: path.join("."),
-            message: validationMessage,
-            type: code
-        };
-    });
+    if (isFieldError) {
+        fieldError = _jsError.results.errors.map(({description, message, path, code}) => {
+            const validationMessage = description ? `${message} => ${description}` : message;
+
+            return {
+                key: path.join("."),
+                message: validationMessage,
+                type: code
+            };
+        });
+    }
 
     return validationError(_jsError.message, fieldError, _httpCode);
 }
@@ -166,14 +171,22 @@ function apiErrorMiddlewareGenerator() {
 
         if (isApiCall) {
             const clientError = toClientError(_error);
+            // stringify to have a consistent size to set the length of the Content
+            const stringifiedClientError = JSON.stringify(clientError);
+            // needed because it seems that the length is not recalculated
+            // if the initial send was a string/html*/
+            const contentLength = stringifiedClientError.length;
 
             if (clientError.httpCode === 500) { // eslint-disable-line no-magic-numbers
-                console.error(clientError);// eslint-disable-line no-console
+                console.error(clientError); // eslint-disable-line no-console
             }
-
             _response
+                .set("Content-length", contentLength)
+                 // needed because it seems that the type is not recalculated if
+                 // the initial send was a string/html
+                .set("Content-Type", "application/json")
                 .status(clientError.httpCode)
-                .send(clientError);
+                .send(stringifiedClientError);
         } else {
             _next(_error);
         }
@@ -196,6 +209,16 @@ function send(_next, _error) {
  */
 function send404(_next, _message = null) {
     send(_next, error404(_message));
+}
+
+/**
+ * Send a 403 error (Forbidden)
+ * @param {function} _next connect next middleware cb
+ * @param {string} _message (optional) message of the error
+ * @returns {void}
+ */
+function send403(_next, _message = null) {
+    send(_next, error(403, _message)); // eslint-disable-line no-magic-numbers
 }
 
 /**
