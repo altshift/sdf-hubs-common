@@ -254,6 +254,7 @@ module.exports = {
     handleAsync,
     isClientError,
     send,
+    send403,
     send404,
     toClientError,
     validationError,
