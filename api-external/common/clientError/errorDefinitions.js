@@ -132,6 +132,7 @@ function error500(_errorOrMessage) {
     const clientError = error(500, javascriptError.message); // eslint-disable-line no-magic-numbers
 
     clientError.stackTrace = javascriptError.stack;
+    clientError.orginalError = _errorOrMessage;
 
     return clientError;
 }
