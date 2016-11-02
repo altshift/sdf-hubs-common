@@ -42,7 +42,7 @@ function error(_httpCode, _apiMessage = null) {
  *
  */
 function validationError(_apiMessage, _fields, _httpCode) {
-    const clientError = error(_httpCode, _apiMessage); // eslint-disable-line no-magic-numbers
+    const clientError = error(_httpCode, _apiMessage);
 
     clientError.fields = _fields;
 
@@ -242,9 +242,6 @@ function handleAsync(_next, _callbackIfOk = null) {
         }
     };
 }
-
-
-
 
 module.exports = {
     apiErrorMiddlewareGenerator,

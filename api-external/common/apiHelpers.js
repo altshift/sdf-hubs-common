@@ -1,5 +1,8 @@
 "use strict";
 
+// node dependencies
+const url = require("url");
+
 /**
  * @param {string} _url an url to guess the collection from
  * @returns {string} the collection name
@@ -16,6 +19,94 @@ function guessCollectionFromUrl(_url) {
     }
 
     return collectionName;
+}
+
+/**
+ * Build the header value of Links for the pagination links last, first, next and prev
+ *
+ * @param {string} _url base url to use as a template
+ * @param {number} _itemSkipped base number of items skipped from which to compute next/prev pages
+ * @param {string} _pageSize pageSize value, representing page size
+ * @param {string} _totalItem total number of item
+ * @returns {string} the Links, header-ready
+ */
+function getPaginationLinks(_url, _itemSkipped = 0, _pageSize, _totalItem) {
+    let links = "";
+    const isPaginationAllowed = typeof _pageSize === "number";
+
+    if (isPaginationAllowed) {
+        const parsedUrl = url.parse(_url, true);
+        const nextPageAllowed = _itemSkipped + _pageSize < _totalItem;
+        const prevPageAllowed = _itemSkipped > 0;
+        const linksDescriptors = [
+            {
+                addLink: nextPageAllowed,
+                rel: "last",
+                skip: Math.floor(_totalItem / _pageSize) * _pageSize,
+                withComma: false
+            },
+            {
+                addLink: prevPageAllowed,
+                rel: "first",
+                skip: 0,
+                withComma: nextPageAllowed
+            },
+            {
+                addLink: prevPageAllowed,
+                rel: "prev",
+                skip: Math.max(0, _itemSkipped - _pageSize),
+                withComma: nextPageAllowed || prevPageAllowed
+            },
+            {
+                addLink: nextPageAllowed,
+                rel: "next",
+                skip: _itemSkipped + _pageSize,
+                withComma: nextPageAllowed || prevPageAllowed
+            }
+        ];
+
+        // Used in order to force url.format to rewrite from query
+        delete parsedUrl.search;
+
+        links = linksDescriptors
+            .filter(_desc => _desc.addLink)
+            .reduce((_accumulator, _desc) => {
+                const newParsedUrl = JSON.parse(JSON.stringify(parsedUrl));
+                let accumulatedLinks = _accumulator;
+
+                if (_desc.withComma) {
+                    accumulatedLinks += ", ";
+                }
+                newParsedUrl.query.$skip = _desc.skip;
+                accumulatedLinks += `<${url.format(newParsedUrl)}>; rel="${_desc.rel}"`;
+
+                return accumulatedLinks;
+            }, "");
+    }
+
+    return links;
+}
+
+/**
+ * Return a json plain object of the parameters
+ *
+ * @param {object} _swaggerMeta swagger api data for this request
+ * @returns {object} the parma object (ready to use in waterline for example)
+ */
+function getParamsObject(_swaggerMeta) {
+    const objectParams = {where: {}};
+
+    Object.keys(_swaggerMeta.params).forEach(_key => {
+        if (_swaggerMeta.params[_key].value !== undefined) {
+            if (_key[0] === "$") {
+                objectParams[_key.substring(1)] = _swaggerMeta.params[_key].value;
+            } else {
+                objectParams.where[_key] = _swaggerMeta.params[_key].value;
+            }
+        }
+    });
+
+    return objectParams;
 }
 
 /**
@@ -46,21 +137,33 @@ function resolveApiAssociation(_object) {
  * @param {string} _associationKey the association key we want to use
  * @returns {object} Waterline query which is a promise too
  */
-function populateModel(_query, _associationField, _associationKey) {
+function populateQuery(_query, _associationField, _associationKey) {
     const query = {};
 
     if (_associationKey) {
         query.select = [_associationKey];
     }
 
-    return _query.populate(_associationField, query).then(model => {
-        if (model && model[_associationField]) {
-            model[`$api_association_${_associationField}`] = model[_associationField].map(associationDoc => {
+    return _query.populate(_associationField, query).then(_result => {
+        const tmpKey = `$api_association_${_associationField}`;
+
+        if (Array.isArray(_result)) {
+            const models = _result;
+
+            models.forEach(_model => {
+                _model[tmpKey] = _model[_associationField].map(associationDoc => {
+                    return associationDoc[_associationKey];
+                });
+            });
+        } else if (_result && _result[_associationField]) {
+            const model = _result;
+
+            model[tmpKey] = model[_associationField].map(associationDoc => {
                 return associationDoc[_associationKey];
             });
         }
 
-        return model;
+        return _result;
     });
 }
 
@@ -77,13 +180,15 @@ function populate(_queryPromise, _collection) {
     const allPromise = [];
 
     associations.forEach(({alias}) => {
-        allPromise.push(populateModel(_queryPromise, alias, associationsKeys[alias]));
+        allPromise.push(populateQuery(_queryPromise, alias, associationsKeys[alias]));
     });
 
     return Promise.all(allPromise).then(([model]) => model);
 }
 
 module.exports = {
+    getPaginationLinks,
+    getParamsObject,
     guessCollectionFromUrl,
     populate,
     resolveApiAssociation
