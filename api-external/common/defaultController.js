@@ -79,7 +79,34 @@ function putRoute(_request, _response, _next) {
  * @returns {void}
  */
 function deleteRoute(_request, _response, _next) {
+    const id = _request.swagger.params.id.value;
+    const query = {where: {id}};
+    const collection = _request.asData.collection;
+    const collectionName = _request.asData.collectionName;
+    const collectionHasSoftDelete = collection.attributes._isSuppressed !== undefined;
 
+    if (!collection) {
+        _next(`Unable to find collection "${_request.asData.collectionName}" `
+            + `from Url "${_request.url}" in default getByIdRoute, maybe the route should be overloaded?`);
+
+        return;
+    }
+
+    if (collectionHasSoftDelete) {
+        collection
+            .update(query, {_isSuppressed: true})
+            .then(_result => {
+                if (_result.length > 0) {
+                    _response.status(204).send(); // eslint-disable-line no-magic-numbers
+                } else {
+                    clientError.send404(_next, `Unable to find item with id '${id}' `
+                                        + `from '${collectionName}'`);
+                }
+            })
+            .catch(clientError.handleAsync(_next));
+    } else {
+        clientError.send403(_next, `You are not allowed to delete an object from '${collectionName}'`);
+    }
 }
 
 
