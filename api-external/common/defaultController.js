@@ -1,7 +1,14 @@
 "use strict";
 
 // local dependencies
-const clientError = require("./error");
+const {
+    send400,
+    send403,
+    send404,
+    handleErrorAsync,
+    tooManyArgumentsError
+} = require("./clientError/errorDefinitions");
+
 const {populate, getParamsObject, getPaginationLinks} = require("./apiHelpers");
 
 /**
@@ -40,11 +47,11 @@ function getByIdRoute(_request, _response, _next) {
             if (itemExists) {
                 _response.send(_result);
             } else {
-                clientError.send404(_next, `Unable to find item with id '${id}' `
+                send404(_next, `GET: Unable to find item with id '${id}' `
                     + `from '${_request.asData.collectionName}'`);
             }
         })
-        .catch(clientError.handleAsync(_next));
+        .catch(handleErrorAsync(_next));
 }
 
 /**
@@ -87,7 +94,7 @@ function getRoute(_request, _response, _next) {
                     .send(_result);
             });
         })
-        .catch(clientError.handleAsync(_next));
+        .catch(handleErrorAsync(_next));
 }
 
 /**
@@ -97,7 +104,41 @@ function getRoute(_request, _response, _next) {
  * @returns {void}
  */
 function postRoute(_request, _response, _next) {
+    const paramKeys = Object.keys(_request.swagger.params);
+    const postedItemName = paramKeys.length > 0 ? paramKeys[0] : null;
+    const postedItem = postedItemName ? _request.swagger.params[postedItemName] : null;
+    const collection = _request.asData.collection;
 
+    if (!collection) {
+        _next(`Unable to find collection "${_request.asData.collectionName}" `
+            + `from Url "${_request.url}" in default getByIdRoute, maybe the route should be overloaded?`);
+
+        return;
+    }
+
+    if (postedItem === null) {
+        send400(
+            "Post must contain data for creating item",
+            [{key: postedItemName, message: "", type: "required"}]
+        );
+    } else if (paramKeys.length > 1) {
+        const error = tooManyArgumentsError(
+            _request.swagger.params,
+            "Too many arguments, Post must have only one parameter."
+        );
+
+        _next(error);
+
+        return;
+    }
+
+    const queryPromise = collection.create(postedItem.value);
+
+    populate(queryPromise, collection)
+        .then(_result => {
+            _response.send(_result);
+        })
+        .catch(handleErrorAsync(_next));
 }
 
 /**
@@ -137,16 +178,15 @@ function deleteRoute(_request, _response, _next) {
                 if (_result.length > 0) {
                     _response.status(204).send(); // eslint-disable-line no-magic-numbers
                 } else {
-                    clientError.send404(_next, `Unable to find item with id '${id}' `
+                    send404(_next, `Unable to find item with id '${id}' `
                                         + `from '${collectionName}'`);
                 }
             })
-            .catch(clientError.handleAsync(_next));
+            .catch(handleErrorAsync(_next));
     } else {
-        clientError.send403(_next, `You are not allowed to delete an object from '${collectionName}'`);
+        send403(_next, `You are not allowed to delete an object from '${collectionName}'`);
     }
 }
-
 
 module.exports = {
     deleteRoute,
@@ -155,8 +195,3 @@ module.exports = {
     postRoute,
     putRoute
 };
-
-
-
-
-
