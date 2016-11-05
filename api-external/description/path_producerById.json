@@ -36,7 +36,7 @@
                 "in": "body",
                 "description": "Data to use to update the Producer",
                 "schema": {
-                    "$ref": "#/definitions/ProducerBody"
+                    "$ref": "#/definitions/ProducerBodyPut"
                 },
                 "required": true
             }

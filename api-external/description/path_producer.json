@@ -78,7 +78,7 @@
                 "in": "body",
                 "description": "Data to use to create a new Producer",
                 "schema": {
-                    "$ref": "#/definitions/ProducerBody"
+                    "$ref": "#/definitions/ProducerBodyPost"
                 },
                 "required": true
             }
