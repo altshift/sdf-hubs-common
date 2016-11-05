@@ -2,31 +2,31 @@
     "type": "object",
     "description": "Account representing an user with ability to log in",
     "required": [
-        "id",
         "login",
         "password",
         "group"
     ],
-    "properties": {
-        "id": {
-            "type": "integer",
-            "description": "Unique account id"
-        },
-        "login": {
-            "type": "string",
-            "description": "Login of this account"
-        },
-        "password": {
-            "type": "string",
-            "description": "Hashed password of this account"
-        },
-        "group": {
-            "type": "string",
-            "description": "Group the account belongs to"
-        },
-        "preferredLanguage": {
-            "type": "string",
-            "description": "Language code for preferred account of the account"
+    "allOf": [
+        { "$ref": "./part_model.json" },
+        {
+            "properties": {
+                "login": {
+                    "type": "string",
+                    "description": "Login of this account"
+                },
+                "password": {
+                    "type": "string",
+                    "description": "Hashed password of this account"
+                },
+                "group": {
+                    "type": "string",
+                    "description": "Group the account belongs to"
+                },
+                "preferredLanguage": {
+                    "type": "string",
+                    "description": "Language code for preferred account of the account"
+                }
+            }
         }
-    }
+    ]
 }
