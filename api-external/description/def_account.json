@@ -7,7 +7,6 @@
         "group"
     ],
     "allOf": [
-        { "$ref": "./part_model.json" },
         {
             "properties": {
                 "login": {
@@ -27,6 +26,7 @@
                     "description": "Language code for preferred account of the account"
                 }
             }
-        }
+        },
+        { "$ref": "./part_model.json" }
     ]
 }
