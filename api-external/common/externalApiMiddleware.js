@@ -106,10 +106,10 @@ function load(_app, _swaggerPath, _controllerPath) {
     const swaggerObjectResolver = resolveRefsAt(_swaggerPath, {filter: ["relative"]});
 
     // Load Swagger data and prepare connect middleware
-    swaggerObjectResolver.then(swaggerObject => {
-        const finalDesc = resolveAllOf(swaggerObject.resolved);
+    swaggerObjectResolver.then((_swaggerObject) => {
+        const finalDesc = resolveAllOf(_swaggerObject.resolved);
 
-        initializeMiddleware(finalDesc, _swaggerMiddleware => {
+        initializeMiddleware(finalDesc, (_swaggerMiddleware) => {
             middleWares.metadata = _swaggerMiddleware.swaggerMetadata();
             middleWares.validator = _swaggerMiddleware.swaggerValidator({validateResponse: true});
             middleWares.router = _swaggerMiddleware.swaggerRouter({
@@ -121,6 +121,10 @@ function load(_app, _swaggerPath, _controllerPath) {
     }).catch(console.error); // eslint-disable-line no-console
 
     // Use middleware when they are ready
+    _app.use((_request, _response, _next) => {
+        _response.originalEnd = _response.end;
+        _next();
+    });
     _app.use(applyMiddlewareGenerator(middleWares, "metadata"));
     _app.use(enrichSwaggerRequest);
     _app.use(applyMiddlewareGenerator(middleWares, "validator"));

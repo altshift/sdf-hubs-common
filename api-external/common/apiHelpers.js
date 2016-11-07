@@ -157,7 +157,8 @@ function mapAssociation(model, _associationField, _associationKey) {
  * @returns {object} the promise returning the model populated
  */
 function populate(_queryPromise, _collection) {
-    const associationsKeys = _collection.getAssociationPopulateKey() || {};
+    const associationsKeys = _collection.getAssociationPopulateKey
+        && _collection.getAssociationPopulateKey() || {};
     const associations = _collection.associations;
     let query = _queryPromise;
 
