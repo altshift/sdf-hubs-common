@@ -156,7 +156,7 @@
         "semi-spacing": "error",
         "semi": "error",
         "sort-keys": "error",
-        "sort-vars": "error",
+        //"sort-vars": "error",
         "space-before-blocks": "error",
         "space-before-function-paren": ["error", "never"],
         "space-in-parens": ["error", "never"],
@@ -165,7 +165,7 @@
         "spaced-comment": ["error", "always"],
 
         // ES 6
-        "arrow-parens" : ["error", "as-needed"],
+        "arrow-parens" : ["error", "always"],
         "arrow-spacing": ["error", {"before": true, "after": true}],
         "no-duplicate-imports": "error",
         "no-useless-rename": "error",
