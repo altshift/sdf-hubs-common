@@ -69,7 +69,7 @@ function getPaginationLinks(_url, _itemSkipped = 0, _pageSize, _totalItem) {
         delete parsedUrl.search;
 
         links = linksDescriptors
-            .filter(_desc => _desc.addLink)
+            .filter((_desc) => _desc.addLink)
             .reduce((_accumulator, _desc) => {
                 const newParsedUrl = JSON.parse(JSON.stringify(parsedUrl));
                 let accumulatedLinks = _accumulator;
@@ -96,7 +96,7 @@ function getPaginationLinks(_url, _itemSkipped = 0, _pageSize, _totalItem) {
 function getParamsObject(_swaggerMeta) {
     const objectParams = {where: {}};
 
-    Object.keys(_swaggerMeta.params).forEach(_key => {
+    Object.keys(_swaggerMeta.params).forEach((_key) => {
         if (_swaggerMeta.params[_key].value !== undefined) {
             if (_key[0] === "$") {
                 objectParams[_key.substring(1)] = _swaggerMeta.params[_key].value;
@@ -116,7 +116,7 @@ function getParamsObject(_swaggerMeta) {
  * @returns {object} the object in argument
  */
 function resolveApiAssociation(_object) {
-    return Object.keys(_object).forEach(_key => {
+    return Object.keys(_object).forEach((_key) => {
         const regex = /^\$api_association_(.*)$/;
         const matches = _key.match(regex);
         const associatedKey = matches && matches.length > 1 && matches[1];
@@ -137,34 +137,16 @@ function resolveApiAssociation(_object) {
  * @param {string} _associationKey the association key we want to use
  * @returns {object} Waterline query which is a promise too
  */
-function populateQuery(_query, _associationField, _associationKey) {
-    const query = {};
+function mapAssociation(model, _associationField, _associationKey) {
+    const tmpKey = `$api_association_${_associationField}`;
 
-    if (_associationKey) {
-        query.select = [_associationKey];
+    if (model[_associationField]) {
+        model[tmpKey] = model[_associationField].map((associationDoc) => {
+            return associationDoc[_associationKey];
+        });
     }
 
-    return _query.populate(_associationField, query).then(_result => {
-        const tmpKey = `$api_association_${_associationField}`;
-
-        if (Array.isArray(_result)) {
-            const models = _result;
-
-            models.forEach(_model => {
-                _model[tmpKey] = _model[_associationField].map(associationDoc => {
-                    return associationDoc[_associationKey];
-                });
-            });
-        } else if (_result && _result[_associationField]) {
-            const model = _result;
-
-            model[tmpKey] = model[_associationField].map(associationDoc => {
-                return associationDoc[_associationKey];
-            });
-        }
-
-        return _result;
-    });
+    return model;
 }
 
 /**
@@ -177,13 +159,27 @@ function populateQuery(_query, _associationField, _associationKey) {
 function populate(_queryPromise, _collection) {
     const associationsKeys = _collection.getAssociationPopulateKey() || {};
     const associations = _collection.associations;
-    const allPromise = [];
+    let query = _queryPromise;
 
     associations.forEach(({alias}) => {
-        allPromise.push(populateQuery(_queryPromise, alias, associationsKeys[alias]));
+        const associatedKey = associationsKeys[alias] || "id";
+        const populateQuery = {};
+
+        if (associatedKey) {
+            populateQuery.select = [associatedKey];
+        }
+        query = query.populate(alias, populateQuery);
     });
 
-    return Promise.all(allPromise).then(([model]) => model);
+    return query.then((_model) => {
+        associations.forEach(({alias}) => {
+            const associatedKey = associationsKeys[alias] || "id";
+
+            mapAssociation(_model, alias, associatedKey);
+        });
+
+        return _model;
+    });
 }
 
 module.exports = {
