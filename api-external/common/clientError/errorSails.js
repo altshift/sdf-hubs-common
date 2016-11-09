@@ -73,7 +73,7 @@ function waterlineToValidationError(_sailsError) {
     const fieldError = [];
 
     Object.keys(_sailsError.invalidAttributes)
-        .forEach(_key => {
+        .forEach((_key) => {
             const sailsDescriptions = _sailsError.invalidAttributes[_key];
 
             sailsDescriptions.forEach(({rule}) => {

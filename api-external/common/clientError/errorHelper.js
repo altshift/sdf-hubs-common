@@ -4,6 +4,19 @@
 // local dependencies
 const errorDefinitions = require("./errorDefinitions");
 const errorSails = require("./errorSails");
+const fs = require("fs");
+const path = require("path");
+const handlebars = require("handlebars");
+
+let errorTemplate;
+
+fs.readFile(path.join(__dirname, "./errorTemplate.hbs"), "utf8", (_error, _content) => {
+    if (_error) {
+        throw _error;
+    } else {
+        errorTemplate = handlebars.compile(_content);
+    }
+});
 
 /**
  * Transform an error or message to a client error
@@ -44,6 +57,39 @@ function toClientError(_errorOrMessage) {
     return clientError;
 }
 
+
+/**
+ * @param {object} _response connect response
+ * @param {object} _error error to display
+ * @returns {void}
+ */
+function sendHtmlError(_response, _error) {
+    if (_error.stackTrace) {
+        const newLineRegex = /\n/g;
+        const tabulationRegex = /\s\s\s\s/g;
+        const filePathRegex = /\(([^)]*)\)/g;
+        const withoutNodeModulesRegex = /(<a((?!node_modules)[^>])*>[^<]*<\/a>)/g;
+
+        _error.stackTrace = _error.stackTrace.replace(newLineRegex, "<br>");
+        _error.stackTrace = _error.stackTrace.replace(tabulationRegex, "&emsp;&emsp;");
+        _error.stackTrace = _error.stackTrace.replace(filePathRegex, "<a href='file:///$1'>$1</a>");
+        _error.stackTrace = _error.stackTrace.replace(withoutNodeModulesRegex, "<strong>$1</strong>");
+    }
+    const errorHtml = errorTemplate({error: _error});
+    const contentLength = Buffer.byteLength(errorHtml, "utf8");
+
+    // Reset swagger response validation
+    if (_response.originalEnd) {
+        _response.end = _response.originalEnd;
+    }
+
+
+    return _response
+        .set("Content-Type", "text/html")
+        .set("Content-length", contentLength)
+        .send(errorHtml);
+}
+
 /**
  * Generate a connect middleware to handle error.
  * There is no parameters for now but it is the correct way to expose a middleware.
@@ -53,6 +99,7 @@ function toClientError(_errorOrMessage) {
 function apiErrorMiddlewareGenerator() {
     return function errorMiddleware(_error, _request, _response, _next) {
         const isApiCall = _request.swagger !== undefined;
+        const isHtmlAccepted = _request.get("Accept").includes("text/html");
 
         if (isApiCall) {
             const clientError = toClientError(_error);
@@ -66,15 +113,19 @@ function apiErrorMiddlewareGenerator() {
                 console.error(clientError); // eslint-disable-line no-console
             }
 
-            _response
-                .set("Content-length", contentLength)
-                 // needed because it seems that the type is not recalculated if
-                 // the initial send was a string/html
-                .set("Content-Type", "application/json")
-                .status(clientError.httpCode)
-                .send(stringifiedClientError);
+            if (isHtmlAccepted) {
+                return sendHtmlError(_response, clientError);
+            } else {
+                return _response
+                    .set("Content-length", contentLength)
+                    // needed because it seems that the type is not recalculated if
+                    // the initial send was a string/html
+                    .set("Content-Type", "application/json")
+                    .status(clientError.httpCode)
+                    .send(stringifiedClientError);
+            }
         } else {
-            _next(_error);
+            return _next(_error);
         }
     };
 }

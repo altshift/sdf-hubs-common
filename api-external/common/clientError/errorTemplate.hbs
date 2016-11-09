@@ -1,0 +1,27 @@
+
+<style type="text/css">
+    .fieldAttribute {
+        padding: 0px 10px;
+    }
+</style>
+<h1>Http error {{error.httpCode}} : {{error.httpMessage}}</h1>
+
+<h2>{{error.apiMessage}}</h2>
+
+
+{{#if error.stackTrace}}
+    <div>{{{error.stackTrace}}}</div>
+{{/if}}
+
+{{#if error.fields}}
+    Field Errors:
+    <ul>
+        {{#each error.fields}}
+            <li>
+                <span class="fieldAttribute"><span>key</span>:&nbsp;<span>{{this.key}}</span></span>
+                <span class="fieldAttribute"><span>type</span>:&nbsp;<span>{{this.type}}</span></span>
+                <span class="fieldAttribute"><span>message</span>:&nbsp;<span>{{this.message}}</span></span>
+            </li>
+        {{/each}}
+    <ul>
+{{/if}}
