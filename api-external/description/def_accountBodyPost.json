@@ -1,0 +1,9 @@
+{
+    "type": "object",
+    "description": "Data to create a producer",
+    "required": [
+        "login",
+        "password"
+    ],
+    "allOf": [{ "$ref": "./def_accountBodyPut.json" }]
+}

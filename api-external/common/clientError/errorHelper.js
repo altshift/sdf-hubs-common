@@ -57,7 +57,6 @@ function toClientError(_errorOrMessage) {
     return clientError;
 }
 
-
 /**
  * @param {object} _response connect response
  * @param {object} _error error to display
@@ -82,7 +81,6 @@ function sendHtmlError(_response, _error) {
     if (_response.originalEnd) {
         _response.end = _response.originalEnd;
     }
-
 
     return _response
         .set("Content-Type", "text/html")
@@ -130,7 +128,24 @@ function apiErrorMiddlewareGenerator() {
     };
 }
 
+/**
+ * @param {string} _404message message to send if 404
+ * @returns {promise<object>} promise returning the query result if no 404
+ */
+function test404Async(_404message) {
+    return function test404(_queryResult) {
+        const itemIsMissing = _queryResult === undefined;
+
+        if (itemIsMissing) {
+            throw errorDefinitions.error404(_404message);
+        }
+
+        return _queryResult;
+    };
+}
+
 module.exports = {
     apiErrorMiddlewareGenerator,
+    test404Async,
     toClientError
 };

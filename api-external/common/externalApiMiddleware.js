@@ -7,6 +7,7 @@ const url = require("url");
 const {resolveRefsAt} = require("json-refs");
 const {initializeMiddleware} = require("swagger-tools");
 const resolveAllOf = require("json-schema-resolve-allof");
+const {resolve} = require("../../lib/jsonSchemaHelpers");
 
 // local dependencies
 const apiHelpers = require("./apiHelpers");
@@ -110,13 +111,11 @@ function enrichSwaggerRequest(_request, _response, _next) {
 function load(_app, _swaggerPath, _controllerPath) {
     const middleWares = {};
 
-    const swaggerObjectResolver = resolveRefsAt(_swaggerPath, {filter: ["relative"]});
+    const swaggerObjectResolver = resolve(_swaggerPath, {refOptions: {filter: ["relative"]}});
 
     // Load Swagger data and prepare connect middleware
     swaggerObjectResolver.then((_swaggerObject) => {
-        const finalDesc = resolveAllOf(_swaggerObject.resolved);
-
-        initializeMiddleware(finalDesc, (_swaggerMiddleware) => {
+        initializeMiddleware(_swaggerObject, (_swaggerMiddleware) => {
             middleWares.metadata = _swaggerMiddleware.swaggerMetadata();
             middleWares.validator = _swaggerMiddleware.swaggerValidator({validateResponse: true});
             middleWares.router = _swaggerMiddleware.swaggerRouter({

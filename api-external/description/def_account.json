@@ -2,42 +2,19 @@
     "type": "object",
     "description": "Account representing an user with ability to log in",
     "required": [
-        "login",
-        "password",
         "group",
-        "status"
+        "preferredLanguage"
     ],
     "allOf": [
+        { "$ref": "./part_model.json" },
         {
             "properties": {
-                "login": {
-                    "type": "string",
-                    "description": "Login of this account"
-                },
-                "password": {
-                    "type": "string",
-                    "description": "Hashed password of this account"
-                },
                 "group": {
                     "type": "string",
                     "description": "Group the account belongs to"
-                },
-                "status": {
-                    "type": "string",
-                    "enum": [
-                        "active",
-                        "inactive",
-                        "blocked",
-                        "refused"
-                    ],
-                    "description": "status of the account"
-                },
-                "preferredLanguage": {
-                    "type": "string",
-                    "description": "Language code for preferred account of the account"
                 }
             }
         },
-        { "$ref": "./part_model.json" }
+        { "$ref": "./def_accountBodyPost.json" }
     ]
 }

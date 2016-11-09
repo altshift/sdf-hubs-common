@@ -1,0 +1,18 @@
+{
+    "type": "object",
+    "description": "Modifiable account data",
+    "properties": {
+        "login": {
+            "type": "string",
+            "description": "Login of this account"
+        },
+        "password": {
+            "type": "string",
+            "description": "Hashed password of this account"
+        },
+        "preferredLanguage": {
+            "type": "string",
+            "description": "Language code for preferred account of the account"
+        }
+    }
+}
