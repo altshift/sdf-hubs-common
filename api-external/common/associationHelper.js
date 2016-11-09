@@ -20,9 +20,19 @@ function validateObjectAgainstModel(_object, _collection) {
     });
 }
 
-function extractAssocValuesToCreate(_oldObjectValues, _newValues, _valueFieldName, _viaFieldName, _viaId) {
-    let keyValuesBeforeUpdate;
-    let itemsToCreate;
+/**
+ * Extract from _newValues the values that needs to be created (because) they
+ * are not in the _oldObjectValues
+ * @param {Array} _oldObjectValues an array of sails object supposed to be an instance of _collection
+ * @param {Array} _newValues an array of values sent by the client
+ * @param {string} _valueFieldName the field name that contains the value in the associated object
+ * @param {string} _viaFieldName the name of the reference that link the association value to its owner
+ * @param {number} _ownerId the id of the item theses association are linked to
+ * @returns {Array} an array of object that need to be added
+ */
+function extractAssocValuesToCreate(_oldObjectValues, _newValues, _valueFieldName, _viaFieldName, _ownerId) {
+    let itemsToCreate,
+        keyValuesBeforeUpdate;
 
     if (_newValues === undefined || _newValues.length === 0) {
         return [];
@@ -38,7 +48,7 @@ function extractAssocValuesToCreate(_oldObjectValues, _newValues, _valueFieldNam
             const itemToAdd = {};
 
             itemToAdd[_valueFieldName] = _value;
-            itemToAdd[_viaFieldName] = _viaId;
+            itemToAdd[_viaFieldName] = _ownerId;
 
             return itemToAdd;
         });
@@ -55,15 +65,23 @@ function extractAssocIdToDelete(_oldObjectValues, _newValues, _valueFieldName) {
             return _value.id;
         });
 }
-
-function validateAndSaveAssociations(_collection, _dataToSave, _idTosave = null) {
-    const isCreate = _idTosave === null; // else it's an update
+/**
+ * Update or create an object and its association base on a raw json object sent by the client and
+ * the collection it belongs to.
+ * @param {object} _collection a sails collection object describing the object being saved
+ * @param {object} _dataToSave a plain json object sent by the client, describing the values needed
+ * for creation or update
+ * @param {Number} [_updatedObjectId] the id of the object being updated
+ * @returns {Promise} return a promise containing the created or updated object
+ */
+function validateAndSaveAssociations(_collection, _dataToSave, _updatedObjectId = null) {
+    const isCreate = _updatedObjectId === null; // else it's an update
     const {associations} = _collection;
     const associationPopulateKey = _collection.getAssociationPopulateKey();
-    const findMainItemQuery = {where: {id: _idTosave}};
+    const findMainItemQuery = {where: {id: _updatedObjectId}};
     const allAssociationsUpdatePromise = [];
     const allObjectsToCreate = [];
-    const mainItemFindPromise = _collection.findOne(_idTosave);
+    const mainItemFindPromise = _collection.findOne(_updatedObjectId);
     const mainItemCreatePromise = _collection.create(_dataToSave);
     const allAssociationValidationPromises = [];
 
@@ -74,7 +92,7 @@ function validateAndSaveAssociations(_collection, _dataToSave, _idTosave = null)
                             + _association.collection.slice(1);
         const assocCollection = global[assocColName];
 
-        query.where[via] = _idTosave;
+        query.where[via] = _updatedObjectId;
 
         return assocCollection
             .find(query)
@@ -87,7 +105,7 @@ function validateAndSaveAssociations(_collection, _dataToSave, _idTosave = null)
                 allAssociationsUpdatePromise.push(assocCollection.destroy(idToDelete));
 
 
-                extractAssocValuesToCreate(_prevValues, expectedValuesAfterUpdate, keyField, via, _idTosave)
+                extractAssocValuesToCreate(_prevValues, expectedValuesAfterUpdate, keyField, via, _updatedObjectId)
                     .forEach((_itemToAdd) => {
                         // TODO validate also during the create to ensure a pseudo transaction before creating objects
                         if (!isCreate) {
@@ -158,7 +176,7 @@ function validateAndSaveAssociations(_collection, _dataToSave, _idTosave = null)
 
                 return _collection.update(findMainItemQuery, _dataToSave);
             })
-            .then(() => populate(_collection.findOne(_idTosave), _collection));
+            .then(() => populate(_collection.findOne(_updatedObjectId), _collection));
     }
 }
 module.exports = {
