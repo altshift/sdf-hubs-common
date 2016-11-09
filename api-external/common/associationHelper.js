@@ -88,8 +88,18 @@ function validateAndSaveAssociations(_collection, _dataToSave, _updatedObjectId 
     const associationBuildQueries = associations.map((_association) => {
         const {alias, via} = _association;
         const query = {where: {}};
-        const assocColName = _association.collection.charAt(0).toUpperCase()
+        const expectedValuesAfterUpdate = _dataToSave[alias] && _dataToSave[alias].slice(); // duplicate the array
+
+        if (expectedValuesAfterUpdate === undefined) {
+            return undefined;
+        }
+
+        let assocColName = _association.collection.charAt(0).toUpperCase()
                             + _association.collection.slice(1);
+
+        if (_collection.getPascalCollectionName) {
+            assocColName = _collection.getPascalCollectionName(_association.collection);
+        }
         const assocCollection = global[assocColName];
 
         query.where[via] = _updatedObjectId;
@@ -99,7 +109,6 @@ function validateAndSaveAssociations(_collection, _dataToSave, _updatedObjectId 
             .then((_prevValues) => {
                 // association field used for the values
                 const keyField = associationPopulateKey[alias];
-                const expectedValuesAfterUpdate = _dataToSave[alias].slice(); // duplicate the array
                 const idToDelete = extractAssocIdToDelete(_prevValues, expectedValuesAfterUpdate, keyField);
 
                 allAssociationsUpdatePromise.push(assocCollection.destroy(idToDelete));
@@ -119,7 +128,7 @@ function validateAndSaveAssociations(_collection, _dataToSave, _updatedObjectId 
                         });
                     });
             });
-    });
+    }).filter((_value) => _value !== undefined);
 
     if (isCreate) {
         return Promise.all(associationBuildQueries)
