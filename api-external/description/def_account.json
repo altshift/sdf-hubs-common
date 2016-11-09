@@ -4,7 +4,8 @@
     "required": [
         "login",
         "password",
-        "group"
+        "group",
+        "status"
     ],
     "allOf": [
         {
@@ -20,6 +21,16 @@
                 "group": {
                     "type": "string",
                     "description": "Group the account belongs to"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "active",
+                        "inactive",
+                        "blocked",
+                        "refused"
+                    ],
+                    "description": "status of the account"
                 },
                 "preferredLanguage": {
                     "type": "string",

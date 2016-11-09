@@ -38,15 +38,22 @@ function applyMiddlewareGenerator(_middleWareHolder, _middlewareKey) {
  */
 function setSwaggerController(_swaggerMeta, _httpMethod) {
     const controllerNotDefined = _swaggerMeta && !_swaggerMeta.operation["x-swagger-router-controller"];
+    const operationNotDefined = _swaggerMeta && !_swaggerMeta.operation.operationId;
 
     if (controllerNotDefined) {
         const urlParts = _swaggerMeta.apiPath.split("/");
 
         _swaggerMeta.operation["x-swagger-router-controller"] = urlParts[1];
-        if (_httpMethod === "GET" && urlParts[2] === "{id}") {
-            _swaggerMeta.operation.operationId = "getByIdRoute";
-        } else {
-            _swaggerMeta.operation.operationId = `${_httpMethod.toLowerCase()}Route`;
+        if (operationNotDefined) {
+            const isGetById = _httpMethod === "GET" && urlParts[2] === "{id}";
+
+            if (isGetById) {
+                _swaggerMeta.operation.operationId = "getByIdRoute";
+            } else if (urlParts.length > 2) {
+                _swaggerMeta.operation.operationId = `${urlParts[2].toLowerCase()}Route`;
+            } else {
+                _swaggerMeta.operation.operationId = `${_httpMethod.toLowerCase()}Route`;
+            }
         }
     }
 }
