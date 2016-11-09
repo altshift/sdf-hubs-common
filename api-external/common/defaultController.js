@@ -15,6 +15,8 @@ const {translateModelsAsync} = require("./translateModels");
 
 /**
  * @param {object} [_options] Options of the generated controller
+ * @param {string} [_options.byIdKey] Key to use for the getById route, "id" by default
+ * @param {string} [_options.byIdModelKey] Key to use for the getById query, byIdKey by default
  * @param {string} [_options.collectionName] the name of the collection
  * @param {object} [_options.s3Config] amazon s3 configs
  * @param {function} [_options.finalizeJsonModel] Called with jsonified model data before
@@ -72,10 +74,13 @@ function generateDefaultController(_options = {}) {
      * @returns {void}
      */
     function getByIdRoute(_request, _response, _next) {
-        const id = _request.swagger.params.id.value;
-        const query = {where: {id}};
+        const idKey = _options.byIdKey || "id";
+        const idModelKey = _options.byIdModelKey || idKey;
+        const idValue = _request.swagger.params[idKey].value;
+        const query = {where: {}};
         const collection = global[_options.collectionName] || _request.asData.collection;
         const collectionHasSoftDelete = collection.attributes._isSuppressed !== undefined;
+        const s3Config = _options.s3Config || {};
 
         if (!collection) {
             _next(`Unable to find collection "${_request.asData.collectionName}" from Url `
@@ -83,6 +88,7 @@ function generateDefaultController(_options = {}) {
 
             return;
         }
+        query.where[idModelKey] = idValue;
 
         if (collectionHasSoftDelete) {
             query.where._isSuppressed = false;
@@ -91,7 +97,12 @@ function generateDefaultController(_options = {}) {
         const queryPromise = collection.findOne(query);
 
         populate(queryPromise, collection)
-            .then(test404Async(`GET: Unable to find item with id '${id}' `
+            .then(translateModelsAsync(
+                    collection,
+                    s3Config.client,
+                    s3Config.translationBucket
+                ))
+            .then(test404Async(`GET: Unable to find item with ${idKey} '${idValue}' `
                         + `from '${_request.asData.collectionName}'`))
             .then(finalize)
             .then((_result) => _response.send(_result))

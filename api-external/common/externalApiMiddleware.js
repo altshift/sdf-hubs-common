@@ -46,7 +46,7 @@ function setSwaggerController(_swaggerMeta, _httpMethod) {
 
         _swaggerMeta.operation["x-swagger-router-controller"] = urlParts[1];
         if (operationNotDefined) {
-            const isGetById = _httpMethod === "GET" && urlParts[2] === "{id}";
+            const isGetById = _httpMethod === "GET" && /{[^{}}]*}/.test(urlParts[2]);
 
             if (isGetById) {
                 _swaggerMeta.operation.operationId = "getByIdRoute";

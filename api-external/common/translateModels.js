@@ -49,8 +49,9 @@ function getTranslationFiles(_amazonS3Client, _amazonBucket, _languages) {
  * Try to translate model
  *
  * @param {object} _model Model to translate
- * @param {object} _keyToTranslate key of the valud to translate
+ * @param {string} _keyToTranslate key of the valud to translate
  * @param {object} _languageDicts language packs
+ * @param {string} [_translationPrefix] The translation key prefix
  * @returns {object} the promise returning the translated model
  */
 function translateModel(_model, _keyToTranslate, _languageDicts, _translationPrefix) {
@@ -81,7 +82,12 @@ function translateModels(_models, _collection, _amazonS3Client, _amazonBucket) {
     if (keyToTranslate) {
         promise = getTranslationFiles(_amazonS3Client, _amazonBucket, ["fr", "en", "zh"])
             .then((_languagePacks) => {
-                _models.forEach((_model) => translateModel(_model, keyToTranslate, _languagePacks, translationPrefix));
+                _models.forEach((_model) => translateModel(
+                                                _model,
+                                                keyToTranslate,
+                                                _languagePacks,
+                                                translationPrefix
+                                            ));
 
                 return _models;
             });
@@ -101,7 +107,12 @@ function translateModels(_models, _collection, _amazonS3Client, _amazonBucket) {
  * @returns {object} the promise returning the translated models
  */
 function translateModelsAsync(_collection, _amazonS3Client, _amazonBucket) {
-    return (_models) => translateModels(_models, _collection, _amazonS3Client, _amazonBucket);
+    return (_models) => {
+        const isArray = Array.isArray(_models);
+
+        return translateModels(isArray ? _models : [_models], _collection, _amazonS3Client, _amazonBucket)
+            .then((_results) => isArray ? _results : _results[0]);
+    };
 }
 
 module.exports = {

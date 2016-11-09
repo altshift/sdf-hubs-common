@@ -4,7 +4,7 @@
             "name": "name",
             "in": "path",
             "description": "The Country iso code on which to apply the operation",
-            "type": "integer",
+            "type": "string",
             "required": true
         }
     ],
