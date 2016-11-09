@@ -9,6 +9,8 @@ const {
     tooManyArgumentsError
 } = require("./clientError/errorDefinitions");
 
+const {test404Async} = require("./clientError/errorHelper");
+
 const {populate, getParamsObject, getPaginationLinks} = require("./apiHelpers");
 const {translateModelsAsync} = require("./translateModels");
 
@@ -58,22 +60,6 @@ function generateDefaultController(_options = {}) {
                 })
                 .catch(_reject);
         });
-    }
-
-    /**
-     * @param {string} _404message message to send if 404
-     * @returns {promise<object>} promise returning the query result if no 404
-     */
-    function test404Async(_404message) {
-        return function test404(_queryResult) {
-            const itemIsMissing = _queryResult === undefined;
-
-            if (itemIsMissing) {
-                throw error404(_404message);
-            }
-
-            return _queryResult;
-        };
     }
 
     /**
