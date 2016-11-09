@@ -4,7 +4,6 @@
 const {
     send400,
     send403,
-    error404,
     handleErrorAsync,
     tooManyArgumentsError
 } = require("./clientError/errorDefinitions");
