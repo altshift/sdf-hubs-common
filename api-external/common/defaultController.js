@@ -186,9 +186,7 @@ function generateDefaultController(_options = {}) {
             );
         }
 
-        const queryPromise = collection.create(postedItem.value);
-
-        populate(queryPromise, collection)
+        validateAndSaveAssociations(collection, postedItem.value)
             .then(finalize)
             .then((_result) => _response.send(_result))
             .catch(handleErrorAsync(_next));

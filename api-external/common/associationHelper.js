@@ -14,7 +14,7 @@ function validateObjectAgainstModel(_object, _collection) {
             if (err) {
                 reject(err);
             } else {
-                resolve();
+                resolve(_object);
             }
         });
     });
@@ -86,15 +86,20 @@ function validateAndSaveAssociations(_collection, _dataToSave, _idTosave = null)
 
                 allAssociationsUpdatePromise.push(assocCollection.destroy(idToDelete));
 
+
                 extractAssocValuesToCreate(_prevValues, expectedValuesAfterUpdate, keyField, via, _idTosave)
-                .forEach((_itemToAdd) => {
-                    allAssociationValidationPromises.push(validateObjectAgainstModel(_itemToAdd, assocCollection));
-                    allObjectsToCreate.push({
-                        collection: assocCollection,
-                        item: _itemToAdd,
-                        via
+                    .forEach((_itemToAdd) => {
+                        // TODO validate also during the create to ensure a pseudo transaction before creating objects
+                        if (!isCreate) {
+                            allAssociationValidationPromises
+                                .push(validateObjectAgainstModel(_itemToAdd, assocCollection));
+                        }
+                        allObjectsToCreate.push({
+                            collection: assocCollection,
+                            item: _itemToAdd,
+                            via
+                        });
                     });
-                });
             });
     });
 
@@ -102,13 +107,18 @@ function validateAndSaveAssociations(_collection, _dataToSave, _idTosave = null)
         return Promise.all(associationBuildQueries)
             .then(() => validateObjectAgainstModel(_dataToSave, _collection))
             .then(() => mainItemCreatePromise)
-            .then((_createdItem) => {
+            .then(({id}) => {
+                // now that we have the id, we can link the assoc object back to its owner
                 allObjectsToCreate.forEach(({collection, item, via}) => {
-                    item[via] = _createdItem.id;
+                    item[via] = id;
                     allAssociationsUpdatePromise.push(collection.create(item));
                 });
+
+                return Promise
+                    .all(allAssociationsUpdatePromise)
+                    .then(() => id);
             })
-            .then((_createdItem) => _createdItem);
+            .then((_id) => populate(_collection.findOne(_id), _collection));
     } else {
         return Promise.all(associationBuildQueries)
             .then(() => Promise.all(allAssociationValidationPromises))
@@ -148,8 +158,7 @@ function validateAndSaveAssociations(_collection, _dataToSave, _idTosave = null)
 
                 return _collection.update(findMainItemQuery, _dataToSave);
             })
-            .then(() => populate(_collection.findOne(_idTosave), _collection))
-            .then((_updatedItems) => _updatedItems);
+            .then(() => populate(_collection.findOne(_idTosave), _collection));
     }
 }
 module.exports = {
