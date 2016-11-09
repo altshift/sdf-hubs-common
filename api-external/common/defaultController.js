@@ -4,14 +4,14 @@
 const {
     send400,
     send403,
-    handleErrorAsync,
-    tooManyArgumentsError
+    handleErrorAsync
 } = require("./clientError/errorDefinitions");
 
 const {test404Async} = require("./clientError/errorHelper");
 
 const {populate, getParamsObject, getPaginationLinks} = require("./apiHelpers");
 const {translateModelsAsync} = require("./translateModels");
+const {validateAndSaveAssociations} = require("./associationHelper");
 
 /**
  * @param {object} [_options] Options of the generated controller
@@ -184,15 +184,6 @@ function generateDefaultController(_options = {}) {
                 "Post must contain data for creating item",
                 [{key: postedItemName, message: "", type: "required"}]
             );
-        } else if (paramKeys.length > 1) {
-            const error = tooManyArgumentsError(
-                _request.swagger.params,
-                "Too many arguments, Post must have only one parameter."
-            );
-
-            _next(error);
-
-            return;
         }
 
         const queryPromise = collection.create(postedItem.value);
@@ -210,7 +201,33 @@ function generateDefaultController(_options = {}) {
      * @returns {void}
      */
     function putRoute(_request, _response, _next) {
+        const {collection, collectionName} = _request.asData;
+        const puttedItemName = collectionName.toLowerCase();
+        const puttedItem = puttedItemName ? _request.swagger.params[puttedItemName] : null;
+        const puttedId = _request.swagger.params.id === undefined ? null : _request.swagger.params.id.value;
 
+        if (!collection) {
+            _next(`Unable to find collection "${collectionName}" `
+                + `from Url "${_request.url}" in default getByIdRoute, maybe the route should be overloaded?`);
+
+            return;
+        } else if (puttedItem === null) {
+            send400(
+                "Put must contain data for updating item",
+                [{key: puttedItemName, message: "", type: "required"}]
+            );
+        } else if (puttedId === null) {
+            send400(
+                "Put must provides an id of the item to update",
+                [{key: "id", message: "", type: "required"}]
+            );
+        }
+
+        validateAndSaveAssociations(collection, puttedItem.value, puttedId)
+            .then((_updatedObject) => {
+                _response.send(_updatedObject);
+            })
+            .catch(handleErrorAsync(_next));
     }
 
     /**

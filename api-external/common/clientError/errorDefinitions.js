@@ -21,8 +21,6 @@ const swaggerCodeToAsType = { // eslint-disable object-curly-newline
     OBJECT_MISSING_REQUIRED_PROPERTY: "required"
 };
 
-const defaultTooManyArgumentsMessage = "Too many arguments, field may be unwanted";
-
 /* ****************************************** Logic ****************************************** */
 /**
  * Build an error object to be sent to the client
@@ -157,26 +155,6 @@ function isClientError(_error) {
 }
 
 /**
- * @param {object} _params Object olding swagger parameters
- * @param {string} _apiMessage api message for error
- * @param {string} _fieldMessage Message for every field error
- *
- * @returns {object} the error object
- */
-function tooManyArgumentsError(_params, _apiMessage, _fieldMessage = defaultTooManyArgumentsMessage) {
-    const fields = Object.keys(_params)
-        .map((_key) => {
-            return {
-                code: "AS_TOO_MANY_ARGUMENTS",
-                key: _key,
-                message: _fieldMessage
-            };
-        });
-
-    return validationError(_apiMessage, fields, 400);// eslint-disable-line no-magic-numbers
-}
-
-/**
  * @param {function} _next connect next middleware cb
  * @param {string} _error the error to deal with
  * @returns {void}
@@ -247,7 +225,6 @@ module.exports = {
     send400,
     send403,
     send404,
-    tooManyArgumentsError,
     validationError,
     validationErrorFromJsError,
     validationErrorType
