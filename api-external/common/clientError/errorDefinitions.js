@@ -65,6 +65,20 @@ function validationError(_apiMessage, _fields, _httpCode) {
 }
 
 /**
+ * Build a code 403 error object to be sent to the client
+ *
+ * @param {string} _apiMessage info message from api
+ *
+ * @returns {object} the error object
+ *
+ */
+function error403(_apiMessage) {
+    const clientError = error(403, _apiMessage); // eslint-disable-line no-magic-numbers
+
+    return clientError;
+}
+
+/**
  * Build a code 404 error object to be sent to the client
  *
  * @param {string} _apiMessage info message from api
@@ -150,7 +164,7 @@ function isClientError(_error) {
  */
 function tooManyArgumentsError(_params, _apiMessage, _fieldMessage = defaultTooManyArgumentsMessage) {
     const fields = Object.keys(_params)
-        .map(_key => {
+        .map((_key) => {
             return {
                 code: "AS_TOO_MANY_ARGUMENTS",
                 key: _key,
@@ -172,15 +186,6 @@ function send(_next, _error) {
 
 /**
  * @param {function} _next connect next middleware cb
- * @param {string} _message (optional) message of the error
- * @returns {void}
- */
-function send404(_next, _message = null) {
-    send(_next, error404(_message));
-}
-
-/**
- * @param {function} _next connect next middleware cb
  * @param {string} _message message of the error
  * @param {string} _fields list of field errors
  * @returns {void}
@@ -197,6 +202,15 @@ function send400(_next, _message, _fields) {
  */
 function send403(_next, _message = null) {
     send(_next, error(403, _message));
+}
+
+/**
+ * @param {function} _next connect next middleware cb
+ * @param {string} _message (optional) message of the error
+ * @returns {void}
+ */
+function send404(_next, _message = null) {
+    send(_next, error404(_message));
 }
 
 /**
@@ -223,6 +237,7 @@ function handleErrorAsync(_next, _callbackIfOk = null) {
 
 module.exports = {
     error,
+    error403,
     error404,
     error500,
     handleErrorAsync,
