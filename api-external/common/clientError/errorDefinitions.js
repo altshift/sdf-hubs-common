@@ -21,8 +21,6 @@ const swaggerCodeToAsType = { // eslint-disable object-curly-newline
     OBJECT_MISSING_REQUIRED_PROPERTY: "required"
 };
 
-const defaultTooManyArgumentsMessage = "Too many arguments, field may be unwanted";
-
 /* ****************************************** Logic ****************************************** */
 /**
  * Build an error object to be sent to the client
@@ -132,6 +130,7 @@ function error500(_errorOrMessage) {
     const clientError = error(500, javascriptError.message); // eslint-disable-line no-magic-numbers
 
     clientError.stackTrace = javascriptError.stack;
+    clientError.orginalError = _errorOrMessage;
 
     return clientError;
 }
@@ -153,26 +152,6 @@ function isClientError(_error) {
     const hasStackIf500 = isObject && (isError500 || typeof _error.stackTrace === "string");
 
     return hasHttpCode && hasHttpMessage && hasStackIf500;
-}
-
-/**
- * @param {object} _params Object olding swagger parameters
- * @param {string} _apiMessage api message for error
- * @param {string} _fieldMessage Message for every field error
- *
- * @returns {object} the error object
- */
-function tooManyArgumentsError(_params, _apiMessage, _fieldMessage = defaultTooManyArgumentsMessage) {
-    const fields = Object.keys(_params)
-        .map((_key) => {
-            return {
-                code: "AS_TOO_MANY_ARGUMENTS",
-                key: _key,
-                message: _fieldMessage
-            };
-        });
-
-    return validationError(_apiMessage, fields, 400);// eslint-disable-line no-magic-numbers
 }
 
 /**
@@ -246,7 +225,6 @@ module.exports = {
     send400,
     send403,
     send404,
-    tooManyArgumentsError,
     validationError,
     validationErrorFromJsError,
     validationErrorType

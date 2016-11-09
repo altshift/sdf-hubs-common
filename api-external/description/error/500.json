@@ -15,6 +15,10 @@
                     "stackTrace" :  {
                         "type": "string",
                         "description" : "Stack trace of the server error, useful for debug purpose"
+                    },
+                    "originalError" : {
+                        "type": "object",
+                        "description" : "content of the original error (before api cleanup), useful for debug purpose"
                     }
                 }
             }

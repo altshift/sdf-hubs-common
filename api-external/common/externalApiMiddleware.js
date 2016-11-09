@@ -46,12 +46,10 @@ function setSwaggerController(_swaggerMeta, _httpMethod) {
 
         _swaggerMeta.operation["x-swagger-router-controller"] = urlParts[1];
         if (operationNotDefined) {
-            const isGetById = _httpMethod === "GET" && /{[^{}}]*}/.test(urlParts[2]);
+            const isGetById = _httpMethod === "GET" && /{[^{}]*}/.test(urlParts[2]);
 
             if (isGetById) {
                 _swaggerMeta.operation.operationId = "getByIdRoute";
-            } else if (urlParts.length > 2) {
-                _swaggerMeta.operation.operationId = `${urlParts[2].toLowerCase()}Route`;
             } else {
                 _swaggerMeta.operation.operationId = `${_httpMethod.toLowerCase()}Route`;
             }
