@@ -132,27 +132,27 @@ function resolveApiAssociation(_object) {
  * Populate the given model for given association with the
  * value from _associationKey in the association document
  *
- * @param {object} _query the Waterline query object
- * @param {string} _associationField the association field name in our document
- * @param {string} _associationKey the association key we want to use
+ * @param {object} _model the populated model instance
+ * @param {string} _associationField the association field name in our model instance
+ * @param {string} _associationKey the association key we want to use instead of the full model instance
  * @returns {object} Waterline query which is a promise too
  */
-function mapAssociation(model, _associationField, _associationKey) {
+function mapAssociation(_model, _associationField, _associationKey) {
     const tmpKey = `$api_association_${_associationField}`;
 
-    if (model[_associationField]) {
-        model[tmpKey] = model[_associationField].map((associationDoc) => {
+    if (_model[_associationField]) {
+        _model[tmpKey] = _model[_associationField].map((associationDoc) => {
             return associationDoc[_associationKey];
         });
     }
 
-    return model;
+    return _model;
 }
 
 /**
  * Populate the given model for all waterline associations with api association values
  *
- * @param {object} _queryPromise promise returning a model
+ * @param {promise<object>} _queryPromise promise returning a model or an array of model
  * @param {object} _collection waterline collection used for query
  * @returns {object} the promise returning the model populated
  */
@@ -176,7 +176,13 @@ function populate(_queryPromise, _collection) {
         associations.forEach(({alias}) => {
             const associatedKey = associationsKeys[alias] || "id";
 
-            mapAssociation(_model, alias, associatedKey);
+            if (Array.isArray(_model)) {
+                _model.forEach((_aModel) => {
+                    mapAssociation(_aModel, alias, associatedKey);
+                });
+            } else if (_model) {
+                mapAssociation(_model, alias, associatedKey);
+            }
         });
 
         return _model;
