@@ -8,7 +8,7 @@
         },
         "password": {
             "type": "string",
-            "description": "Hashed password of this account"
+            "description": "Clear Password of this account never sent, only used for Post and Put."
         },
         "preferredLanguage": {
             "type": "string",

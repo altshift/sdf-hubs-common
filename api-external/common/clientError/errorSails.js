@@ -79,8 +79,8 @@ function waterlineToValidationError(_sailsError) {
             sailsDescriptions.forEach(({rule}) => {
                 fieldError.push({
                     key: _key,
-                    message: sailsToAsMessage[rule],
-                    type: sailsToAsCode[rule]
+                    message: `${sailsToAsMessage[rule]} - with type error ${rule}`,
+                    type: sailsToAsCode[rule] || "validation"
                 });
             });
         });

@@ -18,14 +18,39 @@ const {validateAndSaveAssociations} = require("./associationHelper");
  * @param {string} [_options.byIdKey] Key to use for the getById route, "id" by default
  * @param {string} [_options.byIdModelKey] Key to use for the getById query, byIdKey by default
  * @param {string} [_options.collectionName] the name of the collection
- * @param {object} [_options.s3Config] amazon s3 configs
+ * @param {function} [_options.beforeController] Called with controller info before
+ * doing the controller logic
  * @param {function} [_options.finalizeJsonModel] Called with jsonified model data before
  * being sent to the client
+ * @param {function} [_options.onError] Called when an error occurs in controller
+ * @param {object} [_options.s3Config] amazon s3 configs
  * @param {object} _options.s3Config.translationBucket amazon s3 bucket where to find translation files
  * @param {object} _options.s3Config.client connected amazon s3 client
  * @returns {object} A rest controller with default behaviour
  */
 function generateDefaultController(_options = {}) {
+    /**
+     * @param {object} _controllerInfo Info about the current controller
+     * @returns {promise} a promise
+     */
+    function beforeController(_controllerInfo) {
+        const beforeExists = typeof _options.beforeController === "function";
+
+        return beforeExists ? _options.beforeController(_controllerInfo) : Promise.resolve();
+    }
+
+    /**
+     * @param {object} _controllerInfo Info about the current controller
+     * @returns {function} a promise error callback
+     */
+    function onErrorAsync(_controllerInfo) {
+        return (_error) => {
+            const onErrorExists = typeof _options.onError === "function";
+
+            return onErrorExists ? _options.onError(_error, _controllerInfo) : Promise.reject(_error);
+        };
+    }
+
     /**
      * @param {object} _model the jsonified model ready to be sent over the wire
      * @returns {promise<object>} promise returning the transformed object to send
@@ -94,9 +119,13 @@ function generateDefaultController(_options = {}) {
             query.where._isSuppressed = false;
         }
 
-        const queryPromise = collection.findOne(query);
+        const controllerInfo = {
+            controller: "getByIdRoute",
+            data: query
+        };
 
-        populate(queryPromise, collection)
+        beforeController(controllerInfo)
+            .then(() => populate(collection.findOne(controllerInfo.data), collection))
             .then(translateModelsAsync(
                     collection,
                     s3Config.client,
@@ -106,6 +135,7 @@ function generateDefaultController(_options = {}) {
                         + `from '${_request.asData.collectionName}'`))
             .then(finalize)
             .then((_result) => _response.send(_result))
+            .catch(onErrorAsync(controllerInfo))
             .catch(handleErrorAsync(_next));
     }
 
@@ -133,10 +163,19 @@ function generateDefaultController(_options = {}) {
             params.where._isSuppressed = false;
         }
 
-        const queryPromise = collection.find(params);
-        const queryCountPromise = collection.count(params.where);
+        const controllerInfo = {
+            controller: "getRoute",
+            data: params
+        };
+        let queryPromise, queryCountPromise;
 
-        populate(queryPromise, collection)
+        beforeController(controllerInfo)
+            .then(() => {
+                queryPromise = collection.find(controllerInfo.data);
+                queryCountPromise = collection.count(controllerInfo.data);
+
+                return populate(queryPromise, collection);
+            })
             .then(translateModelsAsync(
                 collection,
                 s3Config.client,
@@ -153,10 +192,13 @@ function generateDefaultController(_options = {}) {
                             "X-Current-Page": Math.ceil((params.skip || 0) / params.limit),
                             "X-Total-Item-Count": _countResult,
                             "X-Total-Page-Count": Math.ceil(_countResult / params.limit)
-                        })
-                        .send(_result);
+                        });
+
+                    return _result;
                 });
             })
+            .then((_result) => _response.send(_result))
+            .catch(onErrorAsync(controllerInfo))
             .catch(handleErrorAsync(_next));
     }
 
@@ -186,9 +228,16 @@ function generateDefaultController(_options = {}) {
             );
         }
 
-        validateAndSaveAssociations(collection, postedItem.value)
+        const controllerInfo = {
+            controller: "postRoute",
+            data: postedItem.value
+        };
+
+        beforeController(controllerInfo)
+            .then(() => validateAndSaveAssociations(collection, controllerInfo.data))
             .then(finalize)
             .then((_result) => _response.send(_result))
+            .catch(onErrorAsync(controllerInfo))
             .catch(handleErrorAsync(_next));
     }
 
@@ -206,7 +255,8 @@ function generateDefaultController(_options = {}) {
 
         if (!collection) {
             _next(`Unable to find collection "${collectionName}" `
-                + `from Url "${_request.url}" in default getByIdRoute, maybe the route should be overloaded?`);
+                + `from Url "${_request.url}" in default getByIdRoute, `
+                + "maybe the route should be overloaded?");
 
             return;
         } else if (puttedItem === null) {
@@ -221,10 +271,16 @@ function generateDefaultController(_options = {}) {
             );
         }
 
-        validateAndSaveAssociations(collection, puttedItem.value, puttedId)
-            .then((_updatedObject) => {
-                _response.send(_updatedObject);
-            })
+        const controllerInfo = {
+            controller: "postRoute",
+            data: puttedItem.value
+        };
+
+        beforeController(controllerInfo)
+            .then(() => validateAndSaveAssociations(collection, controllerInfo.data, puttedId))
+            .then(finalize)
+            .then((_result) => _response.send(_result))
+            .catch(onErrorAsync(controllerInfo))
             .catch(handleErrorAsync(_next));
     }
 
@@ -249,13 +305,17 @@ function generateDefaultController(_options = {}) {
         }
 
         if (collectionHasSoftDelete) {
-            collection
-                .update(query, {_isSuppressed: true})
+            const controllerInfo = {
+                controller: "postRoute",
+                data: query
+            };
+
+            beforeController(controllerInfo)
+                .then(() => collection.update(query, {_isSuppressed: true}))
                 .then(test404Async(`DELETE: Unable to find item with id '${id}' `
                                             + `from '${collectionName}'`))
-                .then(() => {
-                    _response.status(204).send(); // eslint-disable-line no-magic-numbers
-                })
+                .then(() => _response.status(204).send()) // eslint-disable-line no-magic-numbers
+                .catch(onErrorAsync(controllerInfo))
                 .catch(handleErrorAsync(_next));
         } else {
             send403(_next, `You are not allowed to delete an object from '${collectionName}'`);
