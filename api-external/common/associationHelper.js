@@ -65,6 +65,7 @@ function extractAssocIdToDelete(_oldObjectValues, _newValues, _valueFieldName) {
             return _value.id;
         });
 }
+
 /**
  * Update or create an object and its association base on a raw json object sent by the client and
  * the collection it belongs to.
@@ -77,7 +78,6 @@ function extractAssocIdToDelete(_oldObjectValues, _newValues, _valueFieldName) {
 function validateAndSaveAssociations(_collection, _dataToSave, _updatedObjectId = null) {
     const isCreate = _updatedObjectId === null; // else it's an update
     const {associations} = _collection;
-    const associationPopulateKey = _collection.getAssociationPopulateKey();
     const findMainItemQuery = {where: {id: _updatedObjectId}};
     const allAssociationsUpdatePromise = [];
     const allObjectsToCreate = [];
@@ -88,7 +88,8 @@ function validateAndSaveAssociations(_collection, _dataToSave, _updatedObjectId 
     const associationBuildQueries = associations.map((_association) => {
         const {alias, via} = _association;
         const query = {where: {}};
-        const expectedValuesAfterUpdate = _dataToSave[alias] && _dataToSave[alias].slice(); // duplicate the array
+        const expectedValuesAfterUpdate = _dataToSave[alias]
+            && _dataToSave[alias].slice(); // duplicate the array
 
         if (expectedValuesAfterUpdate === undefined) {
             return undefined;
@@ -107,26 +108,32 @@ function validateAndSaveAssociations(_collection, _dataToSave, _updatedObjectId 
         return assocCollection
             .find(query)
             .then((_prevValues) => {
+                const hasAssociation = typeof _collection.getAssociationPopulateKey === "function";
+                const associationPopulateKey = hasAssociation && _collection.getAssociationPopulateKey();
                 // association field used for the values
-                const keyField = associationPopulateKey[alias];
-                const idToDelete = extractAssocIdToDelete(_prevValues, expectedValuesAfterUpdate, keyField);
+                const keyField = associationPopulateKey && associationPopulateKey[alias];
+                const idsToDelete = extractAssocIdToDelete(_prevValues, expectedValuesAfterUpdate, keyField);
 
-                allAssociationsUpdatePromise.push(assocCollection.destroy(idToDelete));
+                allAssociationsUpdatePromise.push(assocCollection.destroy(idsToDelete));
 
-
-                extractAssocValuesToCreate(_prevValues, expectedValuesAfterUpdate, keyField, via, _updatedObjectId)
-                    .forEach((_itemToAdd) => {
-                        // TODO validate also during the create to ensure a pseudo transaction before creating objects
-                        if (!isCreate) {
-                            allAssociationValidationPromises
-                                .push(validateObjectAgainstModel(_itemToAdd, assocCollection));
-                        }
-                        allObjectsToCreate.push({
-                            collection: assocCollection,
-                            item: _itemToAdd,
-                            via
-                        });
+                extractAssocValuesToCreate(
+                    _prevValues,
+                    expectedValuesAfterUpdate,
+                    keyField,
+                    via,
+                    _updatedObjectId
+                ).forEach((_itemToAdd) => {
+                    // TODO validate also during the create to ensure a pseudo transaction before creating objects
+                    if (!isCreate) {
+                        allAssociationValidationPromises
+                            .push(validateObjectAgainstModel(_itemToAdd, assocCollection));
+                    }
+                    allObjectsToCreate.push({
+                        collection: assocCollection,
+                        item: _itemToAdd,
+                        via
                     });
+                });
             });
     }).filter((_value) => _value !== undefined);
 
