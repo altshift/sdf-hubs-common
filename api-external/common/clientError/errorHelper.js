@@ -104,11 +104,6 @@ function apiErrorMiddlewareGenerator() {
 
         if (isApiCall) {
             const clientError = toClientError(_error);
-            // stringify to have a consistent size to set the length of the Content
-            const stringifiedClientError = JSON.stringify(clientError);
-            // needed because it seems that the length is not recalculated
-            // if the initial send was a string/html*/
-            const contentLength = Buffer.byteLength(stringifiedClientError, "utf8");
 
             if (clientError.httpCode === 500) { // eslint-disable-line no-magic-numbers
                 console.error(clientError); // eslint-disable-line no-console
@@ -117,7 +112,20 @@ function apiErrorMiddlewareGenerator() {
             if (isHtmlAccepted) {
                 return sendHtmlError(_response, clientError);
             } else {
-                return _response
+                if (clientError.headers) {
+                    Object.keys(clientError.headers)
+                        .forEach((_headerKey) => {
+                            _response.set(_headerKey, clientError.headers[_headerKey]);
+                        });
+                    delete clientError.headers;
+                }
+                // stringify to have a consistent size to set the length of the Content
+                const stringifiedClientError = JSON.stringify(clientError);
+                // needed because it seems that the length is not recalculated
+                // if the initial send was a string/html*/
+                const contentLength = Buffer.byteLength(stringifiedClientError, "utf8");
+
+                _response
                     .set("Content-length", contentLength)
                     // needed because it seems that the type is not recalculated if
                     // the initial send was a string/html

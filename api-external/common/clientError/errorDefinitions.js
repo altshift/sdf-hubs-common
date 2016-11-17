@@ -91,6 +91,22 @@ function error404(_apiMessage) {
 }
 
 /**
+ * Build a code 429 (too many request) error object to be sent to the client
+ *
+ * @param {string} _apiMessage info message from api
+ * @param {number} _retryAfter time in second before quota reset
+ * @returns {object} the error object
+ *
+ */
+function error429(_apiMessage, _retryAfter) {
+    const clientError = error(429, _apiMessage); // eslint-disable-line no-magic-numbers
+
+    clientError.headers = {"Retry-After": _retryAfter};
+
+    return clientError;
+}
+
+/**
  * Build a 400 clientError from a javascript error from a swagger validation
  *
  * @param {Error} _jsError swagger validation javascript error object
@@ -174,9 +190,18 @@ function send400(_next, _message, _fields) {
 }
 
 /**
+ * @param {function} _next connect next middleware cb
+ * @param {string} _message message of the error
+ * @returns {void}
+ */
+function send401(_next, _message) {
+    send(_next, error(401, _message));
+}
+
+/**
  * Send a 403 error (Forbidden)
  * @param {function} _next connect next middleware cb
- * @param {string} _message (optional) message of the error
+ * @param {string} [_message] message of the error
  * @returns {void}
  */
 function send403(_next, _message = null) {
@@ -185,11 +210,21 @@ function send403(_next, _message = null) {
 
 /**
  * @param {function} _next connect next middleware cb
- * @param {string} _message (optional) message of the error
+ * @param {string} [_message] message of the error
  * @returns {void}
  */
 function send404(_next, _message = null) {
     send(_next, error404(_message));
+}
+
+/**
+ * @param {function} _next connect next middleware cb
+ * @param {number} _retryAfter number of second before quota reset
+ * @param {string} [_message] message of the error
+ * @returns {void}
+ */
+function send429(_next, _retryAfter, _message = null) {
+    send(_next, error429(_message, _retryAfter));
 }
 
 /**
@@ -218,13 +253,16 @@ module.exports = {
     error,
     error403,
     error404,
+    error429,
     error500,
     handleErrorAsync,
     isClientError,
     send,
     send400,
+    send401,
     send403,
     send404,
+    send429,
     validationError,
     validationErrorFromJsError,
     validationErrorType

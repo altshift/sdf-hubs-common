@@ -3,6 +3,7 @@
     "schema": {
         "description": "Definition of an api error 500",
         "type": "object",
+        "title": "Error500",
         "required": [
             "stackTrace"
         ],
