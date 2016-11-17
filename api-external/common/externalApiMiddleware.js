@@ -84,7 +84,11 @@ function enrichSwaggerRequest(_request, _response, _next) {
     _request.asData = {};
 
     if (isApiRequest) {
-        setSwaggerController(_request.swagger, _request.method);
+        const hasOperation = _request.swagger.operation !== undefined;
+
+        if (hasOperation) {
+            setSwaggerController(_request.swagger, _request.method);
+        }
         setCollectionFromUrl(_request.asData, _request.swagger.apiPath);
 
         _request.getFullUrl = () => {

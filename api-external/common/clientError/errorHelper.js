@@ -43,11 +43,14 @@ function toClientError(_errorOrMessage) {
             const isValidationFail = jsError.failedValidation;
             const resFailMessage = "Response validation failed";
             const isResponseValidationFail = isValidationFail && jsError.message.includes(resFailMessage);
+            const isMethodNotAllowed = jsError.allowedMethods !== undefined;
 
             if (isResponseValidationFail) {
                 clientError = errorDefinitions.validationErrorFromJsError(jsError, 500);
             } else if (isValidationFail || jsError.status === 400) {
                 clientError = errorDefinitions.validationErrorFromJsError(jsError, 400);
+            } else if (isMethodNotAllowed) {
+                clientError = errorDefinitions.error404(jsError.message);
             } else {
                 clientError = errorDefinitions.error500(jsError);
             }
