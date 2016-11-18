@@ -140,7 +140,7 @@ function apiKeyCheck(_request, _securityDef, _apiKey, _callback) {
 function apiKeyIncrementMiddleware(_request, _response, _next) {
     const isApiRequest = _request.swagger !== undefined;
 
-    if (isApiRequest === undefined) {
+    if (isApiRequest) {
         _next();
     } else {
         const apiKeyStatus = _request.asData.apiKeyStatus;
