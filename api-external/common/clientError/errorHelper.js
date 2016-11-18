@@ -92,6 +92,27 @@ function sendHtmlError(_response, _error) {
 }
 
 /**
+ * Sometime the middlewares inject some properties into our error object.
+ * We clean it by filtering out values that are not in the model.
+ *
+ * @param {Object} _error errot object that need cleaning
+ * @param {Object} _swagger swagger complete object
+ * @returns {Object} cleanst error
+ */
+function cleanError(_error, _swagger) {
+    const {httpCode} = _error;
+    const errorSchema = _swagger.operation.responses[String(httpCode)].schema;
+
+    return Object.keys(_error)
+        .filter((_errorKey) => errorSchema.properties[_errorKey] !== undefined)
+        .reduce((_cleanstError, _errorKey) => {
+            _cleanstError[_errorKey] = _error[_errorKey];
+
+            return _cleanstError;
+        }, {});
+}
+
+/**
  * Generate a connect middleware to handle error.
  * There is no parameters for now but it is the correct way to expose a middleware.
  *
@@ -103,7 +124,9 @@ function apiErrorMiddlewareGenerator() {
         const isHtmlAccepted = _request.get("Accept").includes("text/html");
 
         if (isApiCall) {
-            const clientError = toClientError(_error);
+            let clientError = toClientError(_error);
+
+            clientError = cleanError(clientError, _request.swagger);
 
             if (clientError.httpCode === 500) { // eslint-disable-line no-magic-numbers
                 console.error(clientError); // eslint-disable-line no-console
