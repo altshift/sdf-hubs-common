@@ -1,6 +1,13 @@
 {
     "description": "Forbidden",
     "schema": {
-        "$ref": "./default.json"
+        "allOf": [
+            {
+                "$ref": "./default.json"
+            },
+            {
+                "title": "Error403"
+            }
+        ]
     }
 }

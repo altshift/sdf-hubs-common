@@ -1,6 +1,13 @@
 {
     "description": "Not found – There is no resource behind this URI",
     "schema": {
-        "$ref": "./default.json"
+        "allOf": [
+            {
+                "$ref": "./default.json"
+            },
+            {
+                "title": "Error404"
+            }
+        ]
     }
 }

@@ -1,6 +1,13 @@
 {
     "description": "Unauthorized (please authenticate)",
     "schema": {
-        "$ref": "./default.json"
+        "allOf": [
+            {
+                "$ref": "./default.json"
+            },
+            {
+                "title": "Error401"
+            }
+        ]
     }
 }

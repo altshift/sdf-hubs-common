@@ -1,7 +1,14 @@
 {
     "description": "Too many requests",
     "schema": {
-        "$ref": "./default.json"
+        "allOf": [
+            {
+                "$ref": "./default.json"
+            },
+            {
+                "title": "Error429"
+            }
+        ]
     },
     "headers": {
         "Retry-After": {

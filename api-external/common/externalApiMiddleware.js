@@ -2,15 +2,22 @@
 
 // node dependencies
 const url = require("url");
+const path = require("path");
 
 // npm dependencies
-const {resolveRefsAt} = require("json-refs");
 const {initializeMiddleware} = require("swagger-tools");
-const resolveAllOf = require("json-schema-resolve-allof");
 const {resolve} = require("../../lib/jsonSchemaHelpers");
 
 // local dependencies
 const apiHelpers = require("./apiHelpers");
+const {
+    apiKeyCheck,
+    apiKeyIncrementMiddleware
+} = require("../../api/helpers/apiKeyHelpers");
+
+const swaggerApiUrl = "/api-docs";
+const swaggerUiUrl = "/api/v1/docs/";
+const swaggerUiUrlWithQuery = `${swaggerUiUrl}?/url=${swaggerApiUrl}`;
 
 /**
  * Function that return a proxy middleware waiting for the availability of the middleware given in parameters.
@@ -103,6 +110,22 @@ function enrichSwaggerRequest(_request, _response, _next) {
 }
 
 /**
+ * Enrich swagger request object with data usefull for controllers
+ *
+ * @param {object} _request connect request
+ * @param {object} _response connect response
+ * @param {function} _next connect next callback
+ * @returns {void}
+ */
+function uiRedirectMiddleWare(_request, _response, _next) {
+    if (_request.url === swaggerUiUrl) {
+        _response.redirect(swaggerUiUrlWithQuery);
+    } else {
+        _next();
+    }
+}
+
+/**
  * Load all external api middlewares
  *
  * @param {expressApp} _app express application
@@ -118,13 +141,20 @@ function load(_app, _swaggerPath, _controllerPath) {
     // Load Swagger data and prepare connect middleware
     swaggerObjectResolver.then((_swaggerObject) => {
         initializeMiddleware(_swaggerObject, (_swaggerMiddleware) => {
+            const swaggerUiDir = path.join(__dirname, "../../../node_modules/swagger-ui/dist");
+
             middleWares.metadata = _swaggerMiddleware.swaggerMetadata();
             middleWares.validator = _swaggerMiddleware.swaggerValidator({validateResponse: true});
+            middleWares.security = _swaggerMiddleware.swaggerSecurity({api_key_security: apiKeyCheck});
             middleWares.router = _swaggerMiddleware.swaggerRouter({
                 controllers: _controllerPath,
                 useStubs: false
             });
-            middleWares.ui = _swaggerMiddleware.swaggerUi();
+            middleWares.ui = _swaggerMiddleware.swaggerUi({
+                apiDocs: swaggerApiUrl,
+                swaggerUi: swaggerUiUrl,
+                swaggerUiDir
+            });
         });
     }).catch(console.error); // eslint-disable-line no-console
 
@@ -135,8 +165,11 @@ function load(_app, _swaggerPath, _controllerPath) {
     });
     _app.use(applyMiddlewareGenerator(middleWares, "metadata"));
     _app.use(enrichSwaggerRequest);
+    _app.use(applyMiddlewareGenerator(middleWares, "security"));
     _app.use(applyMiddlewareGenerator(middleWares, "validator"));
+    _app.use(apiKeyIncrementMiddleware);
     _app.use(applyMiddlewareGenerator(middleWares, "router"));
+    _app.use(uiRedirectMiddleWare);
     _app.use(applyMiddlewareGenerator(middleWares, "ui"));
 }
 

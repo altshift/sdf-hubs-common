@@ -171,8 +171,10 @@ function generateDefaultController(_options = {}) {
 
         beforeController(controllerInfo)
             .then(() => {
-                queryPromise = collection.find(controllerInfo.data);
-                queryCountPromise = collection.count(controllerInfo.data);
+                const {data} = controllerInfo;
+
+                queryPromise = collection.find(data);
+                queryCountPromise = collection.count(data.where);
 
                 return populate(queryPromise, collection);
             })
