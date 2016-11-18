@@ -11,7 +11,7 @@ const {test404Async} = require("./clientError/errorHelper");
 
 const {populate, getParamsObject, getPaginationLinks} = require("./apiHelpers");
 const {translateModelsAsync} = require("./translateModels");
-const {validateAndSaveAssociations} = require("./associationHelper");
+const {saveModelAndAssociations} = require("./associationHelper");
 
 /**
  * @param {object} [_options] Options of the generated controller
@@ -234,7 +234,7 @@ function generateDefaultController(_options = {}) {
         };
 
         beforeController(controllerInfo)
-            .then(() => validateAndSaveAssociations(collection, controllerInfo.data))
+            .then(() => saveModelAndAssociations(collection, controllerInfo.data))
             .then(finalize)
             .then((_result) => _response.send(_result))
             .catch(onErrorAsync(controllerInfo))
@@ -277,7 +277,7 @@ function generateDefaultController(_options = {}) {
         };
 
         beforeController(controllerInfo)
-            .then(() => validateAndSaveAssociations(collection, controllerInfo.data, puttedId))
+            .then(() => saveModelAndAssociations(collection, controllerInfo.data, puttedId))
             .then(finalize)
             .then((_result) => _response.send(_result))
             .catch(onErrorAsync(controllerInfo))

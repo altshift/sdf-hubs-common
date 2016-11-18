@@ -1,5 +1,4 @@
 "use strict";
-
 const {populate} = require("./apiHelpers");
 
 /**
@@ -21,182 +20,259 @@ function validateObjectAgainstModel(_object, _collection) {
 }
 
 /**
- * Extract from _newValues the values that needs to be created (because) they
- * are not in the _oldObjectValues
- * @param {Array} _oldObjectValues an array of sails object supposed to be an instance of _collection
- * @param {Array} _newValues an array of values sent by the client
- * @param {string} _valueFieldName the field name that contains the value in the associated object
- * @param {string} _viaFieldName the name of the reference that link the association value to its owner
- * @param {number} _ownerId the id of the item theses association are linked to
- * @returns {Array} an array of object that need to be added
+ * Return values only present in first array
+ *
+ * @param {any[]} _array The first array
+ * @param {any[]} _array2 The second array
+ * @returns {any[]} an array containing all values present in _array and not in _array2
  */
-function extractAssocValuesToCreate(_oldObjectValues, _newValues, _valueFieldName, _viaFieldName, _ownerId) {
-    let itemsToCreate,
-        keyValuesBeforeUpdate;
-
-    if (_newValues === undefined || _newValues.length === 0) {
-        return [];
-    } else if (_oldObjectValues === undefined || _oldObjectValues.length === 0) {
-        itemsToCreate = _newValues;
-    } else {
-        keyValuesBeforeUpdate = _oldObjectValues.map((_value) => _value[_valueFieldName]);
-        itemsToCreate = _newValues.filter((_value) => !keyValuesBeforeUpdate.includes(_value));
-    }
-
-    return itemsToCreate
-        .map((_value) => {
-            const itemToAdd = {};
-
-            itemToAdd[_valueFieldName] = _value;
-            itemToAdd[_viaFieldName] = _ownerId;
-
-            return itemToAdd;
-        });
-}
-
-function extractAssocIdToDelete(_oldObjectValues, _newValues, _valueFieldName) {
-    return _oldObjectValues
-        .filter((_value) => {
-            const valueBeforeUpdate = _value[_valueFieldName];
-            const valueNeedToBeRemoved = !_newValues || !_newValues.includes(valueBeforeUpdate);
-
-            return valueNeedToBeRemoved;
-        }).map((_value) => {
-            return _value.id;
-        });
+function valuesOnlyInFirst(_array, _array2) {
+    return _array.filter((_val) => !_array2.includes(_val));
 }
 
 /**
- * Update or create an object and its association base on a raw json object sent by the client and
- * the collection it belongs to.
- * @param {object} _collection a sails collection object describing the object being saved
- * @param {object} _dataToSave a plain json object sent by the client, describing the values needed
- * for creation or update
- * @param {Number} [_updatedObjectId] the id of the object being updated
- * @returns {Promise} return a promise containing the created or updated object
+ * Delete all association objects that ar enot usefull anymore
+ * @param {object} _state the state data used for the association save
+ * @returns {function} a callback ready to be used in a promise
  */
-function validateAndSaveAssociations(_collection, _dataToSave, _updatedObjectId = null) {
-    const isCreate = _updatedObjectId === null; // else it's an update
-    const {associations} = _collection;
-    const findMainItemQuery = {where: {id: _updatedObjectId}};
-    const allAssociationsUpdatePromise = [];
-    const allObjectsToCreate = [];
-    const mainItemFindPromise = _collection.findOne(_updatedObjectId);
-    const mainItemCreatePromise = _collection.create(_dataToSave);
-    const allAssociationValidationPromises = [];
+function deleteAssociations(_state) {
+    return () => {
+        const {associationTasks, id} = _state;
 
-    const associationBuildQueries = associations.map((_association) => {
-        const {alias, via} = _association;
-        const query = {where: {}};
-        const expectedValuesAfterUpdate = _dataToSave[alias]
-            && _dataToSave[alias].slice(); // duplicate the array
-
-        if (expectedValuesAfterUpdate === undefined) {
-            return undefined;
-        }
-
-        let assocColName = _association.collection.charAt(0).toUpperCase()
-                            + _association.collection.slice(1);
-
-        if (_collection.getPascalCollectionName) {
-            assocColName = _collection.getPascalCollectionName(_association.collection);
-        }
-        const assocCollection = global[assocColName];
-
-        query.where[via] = _updatedObjectId;
-
-        return assocCollection
-            .find(query)
-            .then((_prevValues) => {
-                const hasAssociation = typeof _collection.getAssociationPopulateKey === "function";
-                const associationPopulateKey = hasAssociation && _collection.getAssociationPopulateKey();
-                // association field used for the values
-                const keyField = associationPopulateKey && associationPopulateKey[alias];
-                const idsToDelete = extractAssocIdToDelete(_prevValues, expectedValuesAfterUpdate, keyField);
-
-                allAssociationsUpdatePromise.push(assocCollection.destroy(idsToDelete));
-
-                extractAssocValuesToCreate(
-                    _prevValues,
-                    expectedValuesAfterUpdate,
-                    keyField,
-                    via,
-                    _updatedObjectId
-                ).forEach((_itemToAdd) => {
-                    // TODO validate also during the create to ensure a pseudo transaction before creating objects
-                    if (!isCreate) {
-                        allAssociationValidationPromises
-                            .push(validateObjectAgainstModel(_itemToAdd, assocCollection));
+        const destroyers = associationTasks
+            .filter(({idsToDelete}) => idsToDelete.length > 0)
+            .map(({keyField, idsToDelete, association, collection}) => {
+                const query = {
+                    where: {
+                        [keyField]: idsToDelete,
+                        [association.via]: id
                     }
-                    allObjectsToCreate.push({
-                        collection: assocCollection,
-                        item: _itemToAdd,
-                        via
-                    });
-                });
+                };
+
+                return collection.destroy(query);
             });
-    }).filter((_value) => _value !== undefined);
 
-    if (isCreate) {
-        return Promise.all(associationBuildQueries)
-            .then(() => validateObjectAgainstModel(_dataToSave, _collection))
-            .then(() => mainItemCreatePromise)
-            .then(({id}) => {
-                // now that we have the id, we can link the assoc object back to its owner
-                allObjectsToCreate.forEach(({collection, item, via}) => {
-                    item[via] = id;
-                    allAssociationsUpdatePromise.push(collection.create(item));
-                });
-
-                return Promise
-                    .all(allAssociationsUpdatePromise)
-                    .then(() => id);
-            })
-            .then((_id) => populate(_collection.findOne(_id), _collection));
-    } else {
-        return Promise.all(associationBuildQueries)
-            .then(() => Promise.all(allAssociationValidationPromises))
-            .then(() => mainItemFindPromise)
-            .then((_foundItem) => {
-                // construct a proper item (all fields with a value) so we can validate it
-                Object
-                    .keys(_dataToSave)
-                    .forEach((_key) => {
-                        if (Array.isArray(_dataToSave[_key])) {
-                            _foundItem[_key] = _dataToSave[_key].splice();
-                        } else {
-                            _foundItem[_key] = _dataToSave[_key];
-                        }
-                    });
-
-                return validateObjectAgainstModel(_foundItem, _collection);
-            })
-            .then(() => {
-                allObjectsToCreate.forEach(({collection, item}) => {
-                    allAssociationsUpdatePromise.push(collection.create(item));
-                });
-
-                return Promise.all(allAssociationsUpdatePromise);
-            })
-            .then(() => {
-                const assocNameList = associations.map(({alias}) => alias);
-
-                // clean object of all assoc field
-                Object
-                    .keys(_dataToSave)
-                    .forEach((_key) => {
-                        if (assocNameList.includes(_key)) {
-                            delete _dataToSave[_key];
-                        }
-                    });
-
-                return _collection.update(findMainItemQuery, _dataToSave);
-            })
-            .then(() => populate(_collection.findOne(_updatedObjectId), _collection));
-    }
+        return Promise.all(destroyers);
+    };
 }
-module.exports = {
-    extractAssocIdToDelete,
-    extractAssocValuesToCreate,
-    validateAndSaveAssociations
-};
+
+/**
+ * Create all association objects that need to be created
+ * @param {object} _state the state data used for the association save
+ * @returns {function} a callback ready to be used in a promise
+ */
+function saveAssociations(_state) {
+    return () => {
+        const {associationTasks} = _state;
+
+        const savers = associationTasks.reduce((_savers, {objectsToCreate, collection}) => {
+            const associationSavers = objectsToCreate.map(
+                    (_associationObject) => collection.create(_associationObject)
+                );
+
+            return associationSavers.concat(_savers);
+        }, []);
+
+        return Promise.all(savers);
+    };
+}
+
+/**
+ * Set the good model Id to all the association objects so that they are ready to be saved
+ * @param {object} _state the state data used for the association save
+ * @returns {function} a callback ready to be used in a promise
+ */
+function setModelIdToAssociationObjects(_state) {
+    return () => {
+        const {savedModel} = _state;
+
+        _state.associationTasks.forEach(({objectsToCreate, association}) => {
+            objectsToCreate.forEach((_associationObject) => {
+                _associationObject[association.via] = savedModel.id;
+            });
+        });
+    };
+}
+
+/**
+ * Update or create the main object and keep the saved object
+ * @param {object} _state the state data used for the association save
+ * @returns {function} a callback ready to be used in a promise
+ */
+function updateOrCreateModel(_state) {
+    return () => {
+        const {id, valueToSave, collection} = _state;
+        let updateOrCreator;
+
+        if (id === undefined) {
+            updateOrCreator = collection.create(valueToSave);
+        } else {
+            updateOrCreator = collection
+                                .update({where: {id}}, valueToSave)
+                                .then((_savedModels) => _savedModels[0]);
+        }
+
+        return updateOrCreator
+            .then((_savedModel) => {
+                _state.savedModel = _savedModel;
+            });
+    };
+}
+
+/**
+ * Validate association objects to be created against their corresponding waterline collection
+ * @param {object} _state the state data used for the association save
+ * @returns {function} a callback ready to be used in a promise
+ */
+function validateAssociationObjects(_state) {
+    return () => {
+        _state.valueToSave = _state.newValues;
+
+        const validators = _state.associationTasks.map(({objectsToCreate, collection, association}) => {
+            const associationValidators = objectsToCreate
+                .map((_associationObject) => validateObjectAgainstModel(_associationObject, collection));
+
+            delete _state.valueToSave[association.alias];
+
+            return Promise.all(associationValidators).catch((_errors) => {
+                const error = new Error(`Fail validating ${_state.collection.tableName} `
+                    + `on ${collection.tableName} associations`);
+
+                error.originalErrors = _errors;
+
+                return Promise.fail(error);
+            });
+        });
+
+        return Promise.all(validators);
+    };
+}
+
+/**
+ * Build the association objects to be created from the ids
+ * @param {object} _state the state data used for the association save
+ * @returns {function} a callback ready to be used in a promise
+ */
+function buildAssociationObjects(_state) {
+    return () => {
+        const {associationTasks, collection} = _state;
+
+        associationTasks.forEach((_associationTask) => {
+            const hasGetAssociationPopulateKey = typeof collection.getAssociationPopulateKey === "function";
+            const associationPopulateKey = hasGetAssociationPopulateKey
+                && collection.getAssociationPopulateKey();
+            const {alias} = _associationTask.association;
+            const keyField = associationPopulateKey && associationPopulateKey[alias];
+
+            _associationTask.keyField = keyField;
+            _associationTask.objectsToCreate = _associationTask.idsToCreate
+                .map((_id) => ({
+                    [_associationTask.association.via]: "-1",
+                    [keyField]: _id
+                }));
+        });
+    };
+}
+
+/**
+ * Build a list of object to create and to destroy for each associations
+ * @param {object} _state the state data used for the association save
+ * @returns {function} a callback ready to be used in a promise
+ */
+function buildAssociationTasks(_state) {
+    return () => {
+        const {collection, newValues, oldValues} = _state;
+        const {associations} = collection;
+
+        _state.associationTasks = associations.map((_association) => {
+            const {alias} = _association;
+            const newIds = newValues[alias] || [];
+            const oldIds = oldValues && oldValues.toJSON()[alias] || [];
+            const idsToDelete = valuesOnlyInFirst(oldIds, newIds);
+            const idsToCreate = valuesOnlyInFirst(newIds, oldIds);
+            let associationCollection;
+
+            if (typeof collection.getAssociationCollection === "function") {
+                associationCollection = collection.getAssociationCollection(_association.collection);
+            } else {
+                const assocColName = _association.collection.charAt(0).toUpperCase()
+                                + _association.collection.slice(1);
+
+                associationCollection = global[assocColName];
+            }
+
+            return {
+                association: _association,
+                collection: associationCollection,
+                idsToCreate,
+                idsToDelete
+            };
+        });
+    };
+}
+
+/**
+ * Validate the given data against waterline collection definition
+ * @param {object} _state the state data used for the association save
+ * @returns {function} a callback ready to be used in a promise
+ */
+function validateMainData(_state) {
+    return () => {
+        const {oldValues, collection, newValues} = _state;
+        const fullData = oldValues.toJSON();
+
+        Object.keys(newValues).forEach((_key) => {
+            fullData[_key] = newValues[_key];
+        });
+
+        return validateObjectAgainstModel(fullData, collection);
+    };
+}
+
+/**
+ * Find the old data of the main object if we have the id
+ * @param {object} _state the state data used for the association save
+ * @returns {promise<void>} A promise on the task
+ */
+function findIfAble(_state) {
+    const {id, collection} = _state;
+
+    if (id !== undefined) {
+        return populate(collection.findOne({where: {id}}), collection)
+            .then((_oldValues) => {
+                _state.oldValues = _oldValues;
+            });
+    }
+
+    return Promise.resolve();
+}
+
+/**
+ * update or create the given model and update associations if any
+ *
+ * @param {object} _collection The collection
+ * @param {object} _newValues The new values to save
+ * @param {integer} [_updatedObjectId=null] The id of the object to update,
+ * if null then an object will be created instead
+ * @returns {promise<objetc>} a promise returning the saved model
+ */
+function saveModelAndAssociations(_collection, _newValues, _updatedObjectId = null) {
+    const state = {
+        collection: _collection,
+        id: _updatedObjectId,
+        newValues: _newValues
+    };
+
+    return findIfAble(state)
+        .then(validateMainData(state))
+        .then(buildAssociationTasks(state))
+        .then(buildAssociationObjects(state))
+        .then(validateAssociationObjects(state))
+        .then(updateOrCreateModel(state))
+        .then(setModelIdToAssociationObjects(state))
+        .then(saveAssociations(state))
+        .then(deleteAssociations(state))
+        .then(() => populate(_collection.findOne({where: {id: state.savedModel.id}}), _collection));
+}
+
+module.exports = {saveModelAndAssociations};
