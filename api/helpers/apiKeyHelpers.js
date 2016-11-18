@@ -77,6 +77,8 @@ function checkApiKey(_key) {
                 if (quotaHasExceeded) {
                     return quotaExceeded(_apiKey);
                 } else {
+                    _apiKey.usedAt = new Date();
+
                     return validKey(_apiKey);
                 }
             } else {
@@ -141,8 +143,6 @@ function apiKeyIncrementMiddleware(_request, _response, _next) {
     const isApiRequest = _request.swagger !== undefined;
 
     if (isApiRequest) {
-        _next();
-    } else {
         const apiKeyStatus = _request.asData.apiKeyStatus;
 
         if (apiKeyStatus) {
@@ -154,6 +154,8 @@ function apiKeyIncrementMiddleware(_request, _response, _next) {
         } else {
             send401(_next, "Missing apiKey");
         }
+    } else {
+        _next();
     }
 }
 
