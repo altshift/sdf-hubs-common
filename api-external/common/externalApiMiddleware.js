@@ -118,7 +118,7 @@ function enrichSwaggerRequest(_request, _response, _next) {
  * @returns {void}
  */
 function uiRedirectMiddleWare(_request, _response, _next) {
-    if (_request.url === swaggerUiUrl) {
+    if (_request.url === swaggerUiUrl || _request.url === "/docs/") {
         _response.redirect(swaggerUiUrlWithQuery);
     } else {
         _next();
