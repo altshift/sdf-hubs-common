@@ -10,7 +10,7 @@ const {error403, handleErrorAsync} = require("../common/clientError/errorDefinit
  * @param {function} _next connect next callback
  * @returns {void}
  */
-function checkpasswordRoute(_request, _response, _next) {
+function checkPasswordpostRoute(_request, _response, _next) {
     const credentials = _request.swagger.params.credentials.value;
     const login = credentials.login;
     const password = credentials.password;
@@ -69,4 +69,4 @@ function checkpasswordRoute(_request, _response, _next) {
         .catch(handleErrorAsync(_next));
 }
 
-module.exports = {checkpasswordRoute};
+module.exports = {checkPasswordpostRoute};

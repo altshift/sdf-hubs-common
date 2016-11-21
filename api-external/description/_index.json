@@ -33,11 +33,11 @@
       "application/json"
     ],
     "paths": {
-        "/account/checkPassword": { "$ref": "./path_checkPassword.json" },
+        "/accounts/checkPassword": { "$ref": "./path_checkPassword.json" },
         "/countries": { "$ref": "./static/path_countries.json" },
         "/countries/{name}": { "$ref": "./static/path_countryById.json" },
-        "/producer": { "$ref": "./path_producer.json" },
-        "/producer/{id}": { "$ref": "./path_producerById.json" }
+        "/producers": { "$ref": "./path_producer.json" },
+        "/producers/{id}": { "$ref": "./path_producerById.json" }
     },
     "definitions": {
       "Country": {

@@ -58,7 +58,9 @@ function setSwaggerController(_swaggerMeta, _httpMethod) {
             if (isGetById) {
                 _swaggerMeta.operation.operationId = "getByIdRoute";
             } else {
-                _swaggerMeta.operation.operationId = `${_httpMethod.toLowerCase()}Route`;
+                const specificFnName = urlParts[2] || "";
+
+                _swaggerMeta.operation.operationId = `${specificFnName}${_httpMethod.toLowerCase()}Route`;
             }
         }
     }
