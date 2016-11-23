@@ -104,7 +104,7 @@ function updateOrCreateModel(_state) {
         const {id, valueToSave, collection} = _state;
         let updateOrCreator;
 
-        if (id === undefined) {
+        if (id === undefined || id === null) {
             updateOrCreator = collection.create(valueToSave);
         } else {
             updateOrCreator = collection
@@ -115,6 +115,8 @@ function updateOrCreateModel(_state) {
         return updateOrCreator
             .then((_savedModel) => {
                 _state.savedModel = _savedModel;
+
+                return _state;
             });
     };
 }
@@ -219,7 +221,7 @@ function buildAssociationTasks(_state) {
 function validateMainData(_state) {
     return () => {
         const {oldValues, collection, newValues} = _state;
-        const fullData = oldValues.toJSON();
+        const fullData = Object.assign({}, oldValues);
 
         Object.keys(newValues).forEach((_key) => {
             fullData[_key] = newValues[_key];
@@ -237,7 +239,8 @@ function validateMainData(_state) {
 function findIfAble(_state) {
     const {id, collection} = _state;
 
-    if (id !== undefined) {
+    if (id !== undefined && id !== null) {
+
         return populate(collection.findOne({id}), collection)
             .then((_oldValues) => {
                 _state.oldValues = _oldValues;
