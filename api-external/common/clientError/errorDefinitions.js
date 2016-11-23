@@ -129,7 +129,12 @@ function validationErrorFromJsError(_jsError, _httpCode) {
         });
     }
 
-    return validationError(_jsError.message, fieldError, _httpCode);
+    const clientError = validationError(_jsError.message, fieldError, _httpCode);
+
+    clientError.originalError = _jsError;
+    clientError.stackTrace = _jsError.stack;
+
+    return clientError;
 }
 
 /**
