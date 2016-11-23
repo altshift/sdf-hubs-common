@@ -74,7 +74,7 @@
         "description": "Create a producer",
         "parameters": [
             {
-                "name": "producerData",
+                "name": "producer",
                 "in": "body",
                 "description": "Data to use to create a new Producer",
                 "schema": {

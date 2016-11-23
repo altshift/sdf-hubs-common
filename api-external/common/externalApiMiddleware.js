@@ -53,10 +53,13 @@ function setSwaggerController(_swaggerMeta, _httpMethod) {
 
         _swaggerMeta.operation["x-swagger-router-controller"] = urlParts[1];
         if (operationNotDefined) {
-            const isGetById = _httpMethod === "GET" && /{[^{}]*}/.test(urlParts[2]);
+            const hasParam = /{[^{}]*}/.test(urlParts[2]);
+            const isGetById = _httpMethod === "GET" && hasParam;
 
             if (isGetById) {
                 _swaggerMeta.operation.operationId = "getByIdRoute";
+            } else if (hasParam) {
+                _swaggerMeta.operation.operationId = `${_httpMethod.toLowerCase()}Route`;
             } else {
                 const specificFnName = urlParts[2] || "";
 
@@ -91,7 +94,6 @@ function enrichSwaggerRequest(_request, _response, _next) {
     const isApiRequest = _request.swagger !== undefined;
 
     _request.asData = {};
-
     if (isApiRequest) {
         const hasOperation = _request.swagger.operation !== undefined;
 

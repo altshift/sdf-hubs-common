@@ -108,7 +108,7 @@ function updateOrCreateModel(_state) {
             updateOrCreator = collection.create(valueToSave);
         } else {
             updateOrCreator = collection
-                                .update({where: {id}}, valueToSave)
+                                .update({id}, valueToSave)
                                 .then((_savedModels) => _savedModels[0]);
         }
 
@@ -238,7 +238,7 @@ function findIfAble(_state) {
     const {id, collection} = _state;
 
     if (id !== undefined) {
-        return populate(collection.findOne({where: {id}}), collection)
+        return populate(collection.findOne({id}), collection)
             .then((_oldValues) => {
                 _state.oldValues = _oldValues;
             });

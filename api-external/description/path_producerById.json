@@ -32,7 +32,7 @@
     "put": {
         "parameters": [
             {
-                "name": "producerData",
+                "name": "producer",
                 "in": "body",
                 "description": "Data to use to update the Producer",
                 "schema": {

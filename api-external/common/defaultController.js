@@ -121,7 +121,8 @@ function generateDefaultController(_options = {}) {
 
         const controllerInfo = {
             controller: "getByIdRoute",
-            data: query
+            data: query,
+            id: idValue
         };
 
         beforeController(controllerInfo)
@@ -274,8 +275,9 @@ function generateDefaultController(_options = {}) {
         }
 
         const controllerInfo = {
-            controller: "postRoute",
-            data: puttedItem.value
+            controller: "putRoute",
+            data: puttedItem.value,
+            id: puttedId
         };
 
         beforeController(controllerInfo)
