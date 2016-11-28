@@ -9,7 +9,7 @@ const {
 
 const {test404Async} = require("./clientError/errorHelper");
 
-const {populate, getParamsObject, getPaginationLinks} = require("./apiHelpers");
+const {populate, getParamsObject, getPaginationLinks, isPaginationNeeded} = require("./apiHelpers");
 const {translateModelsAsync} = require("./translateModels");
 const {saveModelAndAssociations} = require("./associationHelper");
 
@@ -148,6 +148,7 @@ function generateDefaultController(_options = {}) {
      */
     function getRoute(_request, _response, _next) {
         const params = getParamsObject(_request.swagger);
+        const needsPagination = isPaginationNeeded(_request.swagger);
         const collectionName = _options.collectionName || _request.asData.collectionName;
         const collection = global[collectionName];
         const collectionHasSoftDelete = collection && collection.attributes._isSuppressed !== undefined;
@@ -189,13 +190,17 @@ function generateDefaultController(_options = {}) {
                 return queryCountPromise.then((_countResult) => {
                     const url = _request.getFullUrl();
 
-                    _response
-                        .set({
-                            Link: getPaginationLinks(url, params.skip, params.limit, _countResult),
-                            "X-Current-Page": Math.ceil((params.skip || 0) / params.limit),
-                            "X-Total-Item-Count": _countResult,
-                            "X-Total-Page-Count": Math.ceil(_countResult / params.limit)
-                        });
+                    if (needsPagination) {
+                        _response
+                            .set({
+                                Link: getPaginationLinks(url, params.skip, params.limit, _countResult),
+                                "X-Current-Page": Math.ceil((params.skip || 0) / params.limit),
+                                "X-Total-Item-Count": _countResult,
+                                "X-Total-Page-Count": Math.ceil(_countResult / params.limit)
+                            });
+                    } else {
+                        _response.set({"X-Total-Item-Count": _countResult});
+                    }
 
                     return _result;
                 });

@@ -88,6 +88,18 @@ function getPaginationLinks(_url, _itemSkipped = 0, _pageSize, _totalItem) {
 }
 
 /**
+ * Return true if the response needs pagination
+ *
+ * @param {object} _swaggerMeta swagger api data for this request
+ * @returns {boolean} true if the response needs pagination, false otherwise
+ */
+function isPaginationNeeded(_swaggerMeta) {
+    const hasLimit = Object.keys(_swaggerMeta.params).includes("$limit");
+    const hasSkip = Object.keys(_swaggerMeta.params).includes("$skip");
+
+    return hasLimit && hasSkip;
+}
+/**
  * Return a json plain object of the parameters
  *
  * @param {object} _swaggerMeta swagger api data for this request
@@ -193,6 +205,7 @@ module.exports = {
     getPaginationLinks,
     getParamsObject,
     guessCollectionFromUrl,
+    isPaginationNeeded,
     populate,
     resolveApiAssociation
 };
