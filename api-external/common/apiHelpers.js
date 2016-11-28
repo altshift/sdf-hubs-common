@@ -2,6 +2,7 @@
 
 // node dependencies
 const url = require("url");
+const {deepifyObject} = require("../../lib/resquetHelpers");
 
 /**
  * @param {string} _url an url to guess the collection from
@@ -110,13 +111,20 @@ function getParamsObject(_swaggerMeta) {
 
     Object.keys(_swaggerMeta.params).forEach((_key) => {
         if (_swaggerMeta.params[_key].value !== undefined) {
+            // $limit or $sort
             if (_key[0] === "$") {
                 objectParams[_key.substring(1)] = _swaggerMeta.params[_key].value;
             } else {
-                objectParams.where[_key] = _swaggerMeta.params[_key].value;
+                const cleanKey = _key
+                    .replace("$gt", ">=")
+                    .replace("$lt", "<=");
+
+                objectParams.where[cleanKey] = _swaggerMeta.params[_key].value;
             }
         }
     });
+
+    objectParams.where = deepifyObject(objectParams.where);
 
     return objectParams;
 }
