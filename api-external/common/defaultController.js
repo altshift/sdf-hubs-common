@@ -9,7 +9,7 @@ const {
 
 const {test404Async} = require("./clientError/errorHelper");
 
-const {populate, getParamsObject, getPaginationLinks} = require("./apiHelpers");
+const {populate, getParamsObject, getPaginationLinks, isPaginationNeeded, filterResponses} = require("./apiHelpers");
 const {translateModelsAsync} = require("./translateModels");
 const {saveModelAndAssociations} = require("./associationHelper");
 
@@ -136,7 +136,7 @@ function generateDefaultController(_options = {}) {
             .then(test404Async(`GET: Unable to find item with ${idKey} '${idValue}' `
                         + `from '${collectionName}'`))
             .then(finalize)
-            .then((_result) => _response.send(_result))
+            .then((_result) => _response.send(filterResponses(_result, _request.swagger.operation)))
             .catch(onErrorAsync(controllerInfo))
             .catch(handleErrorAsync(_next));
     }
@@ -149,6 +149,7 @@ function generateDefaultController(_options = {}) {
      */
     function getRoute(_request, _response, _next) {
         const params = getParamsObject(_request.swagger);
+        const needsPagination = isPaginationNeeded(_request.swagger);
         const collectionName = _options.collectionName || _request.asData.collectionName;
         const collection = global[collectionName];
         const collectionHasSoftDelete = collection && collection.attributes._isSuppressed !== undefined;
@@ -190,18 +191,22 @@ function generateDefaultController(_options = {}) {
                 return queryCountPromise.then((_countResult) => {
                     const url = _request.getFullUrl();
 
-                    _response
-                        .set({
-                            Link: getPaginationLinks(url, params.skip, params.limit, _countResult),
-                            "X-Current-Page": Math.ceil((params.skip || 0) / params.limit),
-                            "X-Total-Item-Count": _countResult,
-                            "X-Total-Page-Count": Math.ceil(_countResult / params.limit)
-                        });
+                    if (needsPagination) {
+                        _response
+                            .set({
+                                Link: getPaginationLinks(url, params.skip, params.limit, _countResult),
+                                "X-Current-Page": Math.ceil((params.skip || 0) / params.limit),
+                                "X-Total-Item-Count": _countResult,
+                                "X-Total-Page-Count": Math.ceil(_countResult / params.limit)
+                            });
+                    } else {
+                        _response.set({"X-Total-Item-Count": _countResult});
+                    }
 
                     return _result;
                 });
             })
-            .then((_result) => _response.send(_result))
+            .then((_result) => _response.send(filterResponses(_result, _request.swagger.operation)))
             .catch(onErrorAsync(controllerInfo))
             .catch(handleErrorAsync(_next));
     }
@@ -241,7 +246,7 @@ function generateDefaultController(_options = {}) {
         beforeController(controllerInfo)
             .then(() => saveModelAndAssociations(collection, controllerInfo.data))
             .then(finalize)
-            .then((_result) => _response.send(_result))
+            .then((_result) => _response.send(filterResponses(_result, _request.swagger.operation)))
             .catch(onErrorAsync(controllerInfo))
             .catch(handleErrorAsync(_next));
     }
@@ -286,7 +291,7 @@ function generateDefaultController(_options = {}) {
         beforeController(controllerInfo)
             .then(() => saveModelAndAssociations(collection, controllerInfo.data, puttedId))
             .then(finalize)
-            .then((_result) => _response.send(_result))
+            .then((_result) => _response.send(filterResponses(_result, _request.swagger.operation)))
             .catch(onErrorAsync(controllerInfo))
             .catch(handleErrorAsync(_next));
     }

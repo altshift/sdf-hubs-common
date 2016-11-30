@@ -4,6 +4,42 @@
 const url = require("url");
 const {deepifyObject} = require("../../lib/resquetHelpers");
 
+
+/**
+ * @param {object} _response the response object calculated
+ * @param {object} responses swagger responses definitions
+ * @returns {object} filtered _response
+ */
+function filterResponses(_response, {responses}) {
+    const responseDef = responses["200"] || responses["201"];
+
+    if (responseDef !== undefined) {
+        const expectedResponseFields = Object.keys(responseDef.schema.items.properties);
+
+        if (Array.isArray(_response)) {
+            return _response.map((_value) => {
+                return Object.keys(_value)
+                    .filter((__value) => expectedResponseFields.includes(__value))
+                    .reduce((_prev, _cur) => {
+                        _prev[_cur] = _value[_cur];
+
+                        return _prev;
+                    }, {});
+            });
+        } else {
+            return Object.keys(_response)
+                .filter((_value) => expectedResponseFields.includes(_value))
+                .reduce((_prev, _cur) => {
+                    _prev[_cur] = _response[_cur];
+
+                    return _prev;
+                }, {});
+        }
+    } else {
+        return _response;
+    }
+}
+
 /**
  * @param {string} _url an url to guess the collection from
  * @returns {string} the collection name
@@ -92,6 +128,18 @@ function getPaginationLinks(_url, _itemSkipped = 0, _pageSize, _totalItem) {
     return links;
 }
 
+/**
+ * Return true if the response needs pagination
+ *
+ * @param {object} _swaggerMeta swagger api data for this request
+ * @returns {boolean} true if the response needs pagination, false otherwise
+ */
+function isPaginationNeeded(_swaggerMeta) {
+    const hasLimit = Object.keys(_swaggerMeta.params).includes("$limit");
+    const hasSkip = Object.keys(_swaggerMeta.params).includes("$skip");
+
+    return hasLimit && hasSkip;
+}
 /**
  * Return a json plain object of the parameters
  *
@@ -207,9 +255,11 @@ function populate(_queryPromise, _collection) {
 }
 
 module.exports = {
+    filterResponses,
     getPaginationLinks,
     getParamsObject,
     guessCollectionFromUrl,
+    isPaginationNeeded,
     populate,
     resolveApiAssociation
 };
