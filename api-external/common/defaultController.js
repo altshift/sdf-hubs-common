@@ -9,7 +9,7 @@ const {
 
 const {test404Async} = require("./clientError/errorHelper");
 
-const {populate, getParamsObject, getPaginationLinks, isPaginationNeeded} = require("./apiHelpers");
+const {populate, getParamsObject, getPaginationLinks, isPaginationNeeded, filterResponses} = require("./apiHelpers");
 const {translateModelsAsync} = require("./translateModels");
 const {saveModelAndAssociations} = require("./associationHelper");
 
@@ -135,7 +135,7 @@ function generateDefaultController(_options = {}) {
             .then(test404Async(`GET: Unable to find item with ${idKey} '${idValue}' `
                         + `from '${_request.asData.collectionName}'`))
             .then(finalize)
-            .then((_result) => _response.send(_result))
+            .then((_result) => _response.send(filterResponses(_result, _request.swagger.operation)))
             .catch(onErrorAsync(controllerInfo))
             .catch(handleErrorAsync(_next));
     }
@@ -205,7 +205,7 @@ function generateDefaultController(_options = {}) {
                     return _result;
                 });
             })
-            .then((_result) => _response.send(_result))
+            .then((_result) => _response.send(filterResponses(_result, _request.swagger.operation)))
             .catch(onErrorAsync(controllerInfo))
             .catch(handleErrorAsync(_next));
     }
@@ -244,7 +244,7 @@ function generateDefaultController(_options = {}) {
         beforeController(controllerInfo)
             .then(() => saveModelAndAssociations(collection, controllerInfo.data))
             .then(finalize)
-            .then((_result) => _response.send(_result))
+            .then((_result) => _response.send(filterResponses(_result, _request.swagger.operation)))
             .catch(onErrorAsync(controllerInfo))
             .catch(handleErrorAsync(_next));
     }
@@ -288,7 +288,7 @@ function generateDefaultController(_options = {}) {
         beforeController(controllerInfo)
             .then(() => saveModelAndAssociations(collection, controllerInfo.data, puttedId))
             .then(finalize)
-            .then((_result) => _response.send(_result))
+            .then((_result) => _response.send(filterResponses(_result, _request.swagger.operation)))
             .catch(onErrorAsync(controllerInfo))
             .catch(handleErrorAsync(_next));
     }
