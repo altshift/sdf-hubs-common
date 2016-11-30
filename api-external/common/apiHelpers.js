@@ -11,10 +11,12 @@ const {deepifyObject} = require("../../lib/resquetHelpers");
  * @returns {object} filtered _response
  */
 function filterResponses(_response, {responses}) {
-    const responseDef = responses["200"] || responses["201"];
+    const {schema} = responses["200"] || responses["201"];
+    const responseSchemaProperties = schema.properties
+                                    || schema.items && schema.items.properties;
 
-    if (responseDef !== undefined) {
-        const expectedResponseFields = Object.keys(responseDef.schema.items.properties);
+    if (responseSchemaProperties !== undefined) {
+        const expectedResponseFields = Object.keys(responseSchemaProperties);
 
         if (Array.isArray(_response)) {
             return _response.map((_value) => {
