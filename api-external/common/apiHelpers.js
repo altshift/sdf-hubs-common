@@ -11,10 +11,14 @@ const {deepifyObject} = require("../../lib/resquetHelpers");
 function guessCollectionFromUrl(_url) {
     const urlParts = _url.split("/");
     let collectionName = urlParts.length > 1 ? urlParts[1] : null;
+    const isYPlural = collectionName.substr(collectionName.length - 3) === "ies";
 
     if (collectionName) {
         collectionName = collectionName[0].toUpperCase() + collectionName.substring(1);
-        if (collectionName[collectionName.length - 1] === "s") {
+
+        if (isYPlural) {
+            collectionName = `${collectionName.substr(0, collectionName.length - 3)}y`;
+        } else if (collectionName[collectionName.length - 1] === "s") {
             collectionName = collectionName.substr(0, collectionName.length - 1);
         }
     }
@@ -118,7 +122,7 @@ function getParamsObject(_swaggerMeta) {
 }
 
 /**
- * Parse given object and replace wterline association values by our api association values
+ * Parse given object and replace waterline association values by our api association values
  *
  * @param {object} _object javascript object to parse in order to find api association
  * @returns {object} the object in argument
@@ -147,11 +151,15 @@ function resolveApiAssociation(_object) {
  */
 function mapAssociation(_model, _associationField, _associationKey) {
     const tmpKey = `$api_association_${_associationField}`;
+    const oneToNRelationship = _model[_associationField] && Array.isArray(_model[_associationField]);
+    const oneToOneRelationship = _model[_associationField] && typeof _model[_associationField] === "object";
 
-    if (_model[_associationField]) {
+    if (oneToNRelationship) {
         _model[tmpKey] = _model[_associationField].map((associationDoc) => {
             return associationDoc[_associationKey];
         });
+    } else if (oneToOneRelationship) {
+        _model[tmpKey] = _model[_associationField][_associationKey];
     }
 
     return _model;
@@ -177,6 +185,7 @@ function populate(_queryPromise, _collection) {
         if (associatedKey) {
             populateQuery.select = [associatedKey];
         }
+
         query = query.populate(alias, populateQuery);
     });
 

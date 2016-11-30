@@ -103,12 +103,13 @@ function generateDefaultController(_options = {}) {
         const idModelKey = _options.byIdModelKey || idKey;
         const idValue = _request.swagger.params[idKey].value;
         const query = {where: {}};
-        const collection = global[_options.collectionName] || _request.asData.collection;
+        const collectionName = _options.collectionName || _request.asData.collectionName;
+        const collection = global[collectionName] || _request.asData.collection;
         const collectionHasSoftDelete = collection.attributes._isSuppressed !== undefined;
         const s3Config = _options.s3Config || {};
 
         if (!collection) {
-            _next(`Unable to find collection "${_request.asData.collectionName}" from Url `
+            _next(`Unable to find collection "${collectionName}" from Url `
                 + `"${_request.url}" in default getByIdRoute, maybe the route should be overloaded?`);
 
             return;
@@ -133,7 +134,7 @@ function generateDefaultController(_options = {}) {
                     s3Config.translationBucket
                 ))
             .then(test404Async(`GET: Unable to find item with ${idKey} '${idValue}' `
-                        + `from '${_request.asData.collectionName}'`))
+                        + `from '${collectionName}'`))
             .then(finalize)
             .then((_result) => _response.send(_result))
             .catch(onErrorAsync(controllerInfo))
@@ -215,10 +216,11 @@ function generateDefaultController(_options = {}) {
         const paramKeys = Object.keys(_request.swagger.params);
         const postedItemName = paramKeys.length > 0 ? paramKeys[0] : null;
         const postedItem = postedItemName ? _request.swagger.params[postedItemName] : null;
-        const collection = _request.asData.collection;
+        const collectionName = _options.collectionName || _request.asData.collectionName;
+        const collection = global[collectionName];
 
         if (!collection) {
-            _next(`Unable to find collection "${_request.asData.collectionName}" from Url `
+            _next(`Unable to find collection "${collectionName}" from Url `
                 + `"${_request.url}" in default getByIdRoute, maybe the route should be overloaded?`);
 
             return;
@@ -251,7 +253,8 @@ function generateDefaultController(_options = {}) {
      * @returns {void}
      */
     function putRoute(_request, _response, _next) {
-        const {collection, collectionName} = _request.asData;
+        const collectionName = _options.collectionName || _request.asData.collectionName;
+        const collection = global[collectionName];
         const puttedItemName = collectionName.toLowerCase();
         const puttedItem = puttedItemName ? _request.swagger.params[puttedItemName] : null;
         const puttedId = _request.swagger.params.id === undefined ? null : _request.swagger.params.id.value;
@@ -301,29 +304,36 @@ function generateDefaultController(_options = {}) {
         const collection = global[collectionName];
         const collectionHasSoftDelete = collection.attributes._isSuppressed !== undefined;
 
+        let deletePromise;
+
         if (!collection) {
-            _next(`Unable to find collection "${_request.asData.collectionName}" from Url `
+            _next(`Unable to find collection "${collectionName}" from Url `
                 + `"${_request.url}" in default getByIdRoute, maybe the route should be overloaded?`);
 
             return;
         }
-
-        if (collectionHasSoftDelete) {
-            const controllerInfo = {
-                controller: "postRoute",
-                data: query
-            };
-
-            beforeController(controllerInfo)
-                .then(() => collection.update(query, {_isSuppressed: true}))
-                .then(test404Async(`DELETE: Unable to find item with id '${id}' `
-                                            + `from '${collectionName}'`))
-                .then(() => _response.status(204).send()) // eslint-disable-line no-magic-numbers
-                .catch(onErrorAsync(controllerInfo))
-                .catch(handleErrorAsync(_next));
+        if (_options.allowRealDelete) {
+            deletePromise = collection.destroy({id});
+        } else if (collectionHasSoftDelete) {
+            deletePromise = collection.update(query, {_isSuppressed: true});
         } else {
             send403(_next, `You are not allowed to delete an object from '${collectionName}'`);
+
+            return;
         }
+
+        const controllerInfo = {
+            controller: "deleteRoute",
+            data: query
+        };
+
+        beforeController(controllerInfo)
+            .then(() => deletePromise)
+            .then(test404Async(`DELETE: Unable to find item with id '${id}' `
+                                        + `from '${collectionName}'`))
+            .then(() => _response.status(204).send()) // eslint-disable-line no-magic-numbers
+            .catch(onErrorAsync(controllerInfo))
+            .catch(handleErrorAsync(_next));
     }
 
     return {
