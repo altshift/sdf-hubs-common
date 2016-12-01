@@ -22,6 +22,8 @@ const {saveModelAndAssociations} = require("./associationHelper");
  * doing the controller logic
  * @param {function} [_options.finalizeJsonModel] Called with jsonified model data before
  * being sent to the client
+ * @param {function} [_options.transformJsonModels] Called synchronously with Array of jsonified models  data before
+ * being sent to the client
  * @param {function} [_options.onError] Called when an error occurs in controller
  * @param {object} [_options.s3Config] amazon s3 configs
  * @param {object} _options.s3Config.translationBucket amazon s3 bucket where to find translation files
@@ -82,7 +84,11 @@ function generateDefaultController(_options = {}) {
 
             Promise.all(allPromises)
                 .then(() => {
-                    _resolve(allModels);
+                    if (typeof _options.transformJsonModels === "function") {
+                        _resolve(_options.transformJsonModels(allModels));
+                    } else {
+                        _resolve(allModels);
+                    }
                 })
                 .catch(_reject);
         });

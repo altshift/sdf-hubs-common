@@ -71,7 +71,7 @@ function translateModel(_model, _keyToTranslate, _languageDicts, _translationPre
  * @param {object[]} _models List of models
  * @param {object} _collection waterline collection used for query
  * @param {object} _amazonS3Client Amazon s3 Client
- * @param {object} _amazonBucket Amazon s3 Vucket where to find the translation files
+ * @param {object} _amazonBucket Amazon s3 Bucket where to find the translation files
  * @returns {object} the promise returning the translated models
  */
 function translateModels(_models, _collection, _amazonS3Client, _amazonBucket) {
