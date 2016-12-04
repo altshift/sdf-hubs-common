@@ -49,7 +49,7 @@ function getTranslationFiles(_amazonS3Client, _amazonBucket, _languages) {
  * Try to translate model
  *
  * @param {object} _model Model to translate
- * @param {string} _keyToTranslate key of the valud to translate
+ * @param {string} _keyToTranslate key of the value to translate
  * @param {object} _languageDicts language packs
  * @param {string} [_translationPrefix] The translation key prefix
  * @returns {object} the promise returning the translated model
@@ -57,11 +57,23 @@ function getTranslationFiles(_amazonS3Client, _amazonBucket, _languages) {
 function translateModel(_model, _keyToTranslate, _languageDicts, _translationPrefix) {
     Object.keys(_languageDicts)
         .forEach((_languageKey) => {
-            const valueToTranslate = _model[_keyToTranslate];
-            const key = _translationPrefix ? `${_translationPrefix}${valueToTranslate}` : valueToTranslate;
-            const translation = _languageDicts[_languageKey][key];
+            if (Array.isArray(_keyToTranslate)) {
+                _keyToTranslate
+                    .filter((_singleKeyToTranslate) => _model[_singleKeyToTranslate] !== null)
+                    .forEach((_singleKeyToTranslate) => {
+                        const valueToTranslate = _model[_singleKeyToTranslate];
+                        const key = _translationPrefix ? `${_translationPrefix}${valueToTranslate}` : valueToTranslate;
+                        const translation = _languageDicts[_languageKey][key];
 
-            _model[`name_${_languageKey}`] = translation || `MISSING TRANSLATION: ${key}`;
+                        _model[`${_singleKeyToTranslate}_${_languageKey}`] = translation || `MISSING TRANSLATION: ${key}`;
+                    });
+            } else {
+                const valueToTranslate = _model[_keyToTranslate];
+                const key = _translationPrefix ? `${_translationPrefix}${valueToTranslate}` : valueToTranslate;
+                const translation = _languageDicts[_languageKey][key];
+
+                _model[`name_${_languageKey}`] = translation || `MISSING TRANSLATION: ${key}`;
+            }
         });
 }
 
@@ -71,7 +83,7 @@ function translateModel(_model, _keyToTranslate, _languageDicts, _translationPre
  * @param {object[]} _models List of models
  * @param {object} _collection waterline collection used for query
  * @param {object} _amazonS3Client Amazon s3 Client
- * @param {object} _amazonBucket Amazon s3 Vucket where to find the translation files
+ * @param {object} _amazonBucket Amazon s3 Bucket where to find the translation files
  * @returns {object} the promise returning the translated models
  */
 function translateModels(_models, _collection, _amazonS3Client, _amazonBucket) {
@@ -117,5 +129,6 @@ function translateModelsAsync(_collection, _amazonS3Client, _amazonBucket) {
 
 module.exports = {
     translateModels,
-    translateModelsAsync
+    translateModelsAsync,
+    getTranslationFiles
 };

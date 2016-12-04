@@ -1,8 +1,4 @@
 {
-    "required": [
-        "name_fr",
-        "name_en"
-    ],
     "properties": {
         "name_fr": {
             "type": "string",
