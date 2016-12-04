@@ -4,6 +4,43 @@
 const url = require("url");
 const {deepifyObject} = require("../../lib/resquetHelpers");
 
+/**
+ *
+ * Convert relative hub url to full url
+ * @param {object} host base url for cdn content
+ * @param {object} keyPictureUrl names of the fields that are url picture
+ * @returns {Promise} promise containing the modified models
+ */
+function completeRelativeUrl({host}, {keyPictureUrl}) {
+    return (_models) => {
+        const isArray = Array.isArray(_models);
+        const needUrlCompleting = keyPictureUrl !== undefined && keyPictureUrl !== null;
+        const keyToComplete = Array.isArray(keyPictureUrl) ? keyPictureUrl : [keyPictureUrl];
+        const completeSingleModel = (_model) => {
+            keyToComplete.forEach((_keyToComplete) => {
+                if (_model[_keyToComplete]) {
+                    const isRelative = _model[_keyToComplete][0] === "/";
+
+                    if (isRelative) {
+                        _model[_keyToComplete] = `${host}${_model[_keyToComplete]}`;
+                    }
+                }
+            });
+        };
+
+        if (needUrlCompleting) {
+            if (isArray) {
+                _models.forEach((_model) => {
+                    completeSingleModel(_model);
+                });
+            } else {
+                completeSingleModel(_models);
+            }
+        }
+
+        return Promise.resolve(_models);
+    };
+}
 
 /**
  * @param {object} _response the response object calculated
@@ -13,7 +50,7 @@ const {deepifyObject} = require("../../lib/resquetHelpers");
 function filterResponses(_response, {responses}) {
     const {schema} = responses["200"] || responses["201"];
     const responseSchemaProperties = schema.properties
-                                    || schema.items && schema.items.properties;
+        || schema.items && schema.items.properties;
 
     if (responseSchemaProperties !== undefined) {
         const expectedResponseFields = Object.keys(responseSchemaProperties);
@@ -149,7 +186,7 @@ function isPaginationNeeded(_swaggerMeta) {
  * @returns {object} the parma object (ready to use in waterline for example)
  */
 function getParamsObject(_swaggerMeta) {
-    const objectParams = {where: {}};
+    const objectParams = { where: {} };
 
     Object.keys(_swaggerMeta.params).forEach((_key) => {
         if (_swaggerMeta.params[_key].value !== undefined) {
@@ -257,6 +294,7 @@ function populate(_queryPromise, _collection) {
 }
 
 module.exports = {
+    completeRelativeUrl,
     filterResponses,
     getPaginationLinks,
     getParamsObject,

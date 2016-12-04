@@ -11,7 +11,10 @@ const {test404Async} = require("./clientError/errorHelper");
 
 const {populate, getParamsObject, getPaginationLinks, isPaginationNeeded, filterResponses} = require("./apiHelpers");
 const {translateModelsAsync} = require("./translateModels");
+const {completeRelativeUrl} = require("./apiHelpers");
 const {saveModelAndAssociations} = require("./associationHelper");
+const {cdn} = require("../../../config/publicConfig");
+
 
 /**
  * @param {object} [_options] Options of the generated controller
@@ -128,6 +131,7 @@ function generateDefaultController(_options = {}) {
 
         beforeController(controllerInfo)
             .then(() => populate(collection.findOne(controllerInfo.data), collection))
+            .then(completeRelativeUrl(cdn, collection))
             .then(translateModelsAsync(
                     collection,
                     s3Config.client,
@@ -181,6 +185,7 @@ function generateDefaultController(_options = {}) {
 
                 return populate(queryPromise, collection);
             })
+            .then(completeRelativeUrl(cdn, collection))
             .then(translateModelsAsync(
                 collection,
                 s3Config.client,
