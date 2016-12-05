@@ -28,7 +28,7 @@ function completeRelativeUrl({host}, {keyPictureUrl}) {
             });
         };
 
-        if (needUrlCompleting) {
+        if (needUrlCompleting && _models) {
             if (isArray) {
                 _models.forEach((_model) => {
                     completeSingleModel(_model);

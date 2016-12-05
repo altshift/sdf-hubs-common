@@ -13,6 +13,15 @@
                 }
             },
             {
+                "name": "login",
+                "in": "query",
+                "description": "List of logins of producers to return",
+                "type": "array",
+                "items": {
+                    "type": "string"
+                }
+            },
+            {
                 "name": "updatedAt.$gt",
                 "in": "query",
                 "description": "Will return producer updated strictly after given date. Date-time format: http://xml2rfc.ietf.org/public/rfc/html/rfc3339.html#anchor14",
