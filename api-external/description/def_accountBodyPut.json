@@ -12,7 +12,8 @@
         },
         "preferredLanguage": {
             "type": "string",
-            "description": "Language code for preferred account of the account"
+            "enum": ["fr", "en", "zh"],
+            "description": "Language code for preferred account of the account one language among fr, en and zh"
         }
     }
 }
