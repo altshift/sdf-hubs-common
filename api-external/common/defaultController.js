@@ -137,7 +137,7 @@ function generateDefaultController(_options = {}) {
 
         beforeController(controllerInfo)
             .then(() => populate(collection.findOne(controllerInfo.data), collection))
-            .then(completeRelativeUrl(cdn, collection))
+            .then(completeRelativeUrl(cdn, collection, collectionName))
             .then(translateModelsAsync(
                     collection,
                     s3Config.client,
@@ -191,7 +191,7 @@ function generateDefaultController(_options = {}) {
 
                 return populate(queryPromise, collection);
             })
-            .then(completeRelativeUrl(cdn, collection))
+            .then(completeRelativeUrl(cdn, collection, collectionName))
             .then(translateModelsAsync(
                 collection,
                 s3Config.client,

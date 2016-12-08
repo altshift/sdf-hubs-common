@@ -11,7 +11,7 @@ const {deepifyObject} = require("../../lib/resquetHelpers");
  * @param {object} keyPictureUrl names of the fields that are url picture
  * @returns {Promise} promise containing the modified models
  */
-function completeRelativeUrl({host}, {keyPictureUrl}) {
+function completeRelativeUrl({host, hostOld}, {keyPictureUrl}, _collectionName) {
     return (_models) => {
         const isArray = Array.isArray(_models);
         const needUrlCompleting = keyPictureUrl !== undefined && keyPictureUrl !== null;
@@ -20,9 +20,14 @@ function completeRelativeUrl({host}, {keyPictureUrl}) {
             keyToComplete.forEach((_keyToComplete) => {
                 if (_model[_keyToComplete]) {
                     const isRelative = _model[_keyToComplete][0] === "/";
+                    const isOldPicture = !_model[_keyToComplete].includes("/");
 
                     if (isRelative) {
                         _model[_keyToComplete] = `${host}${_model[_keyToComplete]}`;
+                    } else if (isOldPicture && hostOld) {
+                        const {id} = _model;
+
+                        _model[_keyToComplete] = `${hostOld}/${_collectionName.toLowerCase()}s/${id}/${_model[_keyToComplete]}`;
                     }
                 }
             });
