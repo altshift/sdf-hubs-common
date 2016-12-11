@@ -9,12 +9,18 @@ const {
 
 const {test404Async} = require("./clientError/errorHelper");
 
-const {populate, getParamsObject, getPaginationLinks, isPaginationNeeded, filterResponses} = require("./apiHelpers");
+const {
+    populate,
+    getParamsObject,
+    getPaginationLinks,
+    isPaginationNeeded,
+    filterResponses
+} = require("./apiHelpers");
+
 const {translateModelsAsync} = require("./translateModels");
 const {completeRelativeUrl} = require("./apiHelpers");
 const {saveModelAndAssociations} = require("./associationHelper");
 const {cdn} = require("../../../config/publicConfig");
-
 
 /**
  * @param {object} [_options] Options of the generated controller
@@ -25,8 +31,8 @@ const {cdn} = require("../../../config/publicConfig");
  * doing the controller logic
  * @param {function} [_options.finalizeJsonModel] Called with jsonified model data before
  * being sent to the client
- * @param {function} [_options.transformJsonModels] Called synchronously with Array of jsonified models  data before
- * being sent to the client
+ * @param {function} [_options.transformJsonModels] Called synchronously with Array of jsonified models
+ * data before being sent to the client
  * @param {function} [_options.onError] Called when an error occurs in controller
  * @param {object} [_options.s3Config] amazon s3 configs
  * @param {object} _options.s3Config.translationBucket amazon s3 bucket where to find translation files

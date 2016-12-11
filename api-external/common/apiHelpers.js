@@ -16,7 +16,8 @@ function completeRelativeUrl({host, hostOld}, {keyPictureUrl}, _collectionName) 
         const isArray = Array.isArray(_models);
         const needUrlCompleting = keyPictureUrl !== undefined && keyPictureUrl !== null;
         const keyToComplete = Array.isArray(keyPictureUrl) ? keyPictureUrl : [keyPictureUrl];
-        const completeSingleModel = (_model) => {
+
+        function completeSingleModel(_model) {
             keyToComplete.forEach((_keyToComplete) => {
                 if (_model[_keyToComplete]) {
                     const isRelative = _model[_keyToComplete][0] === "/";
@@ -31,13 +32,11 @@ function completeRelativeUrl({host, hostOld}, {keyPictureUrl}, _collectionName) 
                     }
                 }
             });
-        };
+        }
 
         if (needUrlCompleting && _models) {
             if (isArray) {
-                _models.forEach((_model) => {
-                    completeSingleModel(_model);
-                });
+                _models.forEach(completeSingleModel);
             } else {
                 completeSingleModel(_models);
             }
