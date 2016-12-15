@@ -121,7 +121,7 @@ function cleanError(_error, _swagger) {
 function apiErrorMiddlewareGenerator() {
     return function errorMiddleware(_error, _request, _response, _next) {
         const isApiCall = _request.swagger !== undefined;
-        const isHtmlAccepted = _request.get("Accept").includes("text/html");
+        const isHtmlAccepted = _request.get("Accept") && _request.get("Accept").includes("text/html");
 
         if (isApiCall) {
             let clientError = toClientError(_error);
