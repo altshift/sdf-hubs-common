@@ -155,7 +155,7 @@
         "require-jsdoc": "error",
         "semi-spacing": "error",
         "semi": "error",
-        "sort-keys": "error",
+        // "sort-keys": "error",
         //"sort-vars": "error",
         "space-before-blocks": "error",
         "space-before-function-paren": ["error", "never"],
