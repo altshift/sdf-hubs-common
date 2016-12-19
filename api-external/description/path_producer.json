@@ -41,7 +41,7 @@
                 "description": "Will sort results, format is \"propertyName ASC\" or \"propertyName DESC\", propertName can be every property that is not an array",
                 "type": "string",
                 "format": "sort",
-                "default": "createdAt ASC"
+                "default": "id ASC"
             },
             {
                 "name": "$limit",

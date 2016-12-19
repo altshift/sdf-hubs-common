@@ -190,7 +190,7 @@ function isPaginationNeeded(_swaggerMeta) {
  * @returns {object} the parma object (ready to use in waterline for example)
  */
 function getParamsObject(_swaggerMeta) {
-    const objectParams = { where: {} };
+    const objectParams = {where: {}};
 
     Object.keys(_swaggerMeta.params).forEach((_key) => {
         if (_swaggerMeta.params[_key].value !== undefined) {

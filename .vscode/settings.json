@@ -1,6 +1,6 @@
 // Placez vos paramètres dans ce fichier pour remplacer les paramètres par défaut et les paramètres utilisateur.
 {
-    "jira-code.jira-projects": ["WINHUB", "FOODHUB", "FIA"],
+    "jira-code.jira-projects": ["WINHUB", "FOODHUB", "FIA", "FIASUP"],
     "jira-code.jira-filter": "status NOT IN (done,rejected) AND type in (bug,task,Sub-task)",
     "files.trimTrailingWhitespace": true
 }
