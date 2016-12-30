@@ -15,7 +15,6 @@ const i18n = {
     currentLanguage: "",
     dictionnary: {},
 
-
     setupAmazon(_amazoneConfig) {
         this.amazoneConfig = _amazoneConfig;
         rAmazoneClient.config.update(_amazoneConfig.amazoneClient);
@@ -83,7 +82,7 @@ const i18n = {
                 } else {
                     let dict = null;
 
-                    (function() {
+                    (function isolator() {
                         function define(_deps, _fn) {
                             return _fn();
                         }
