@@ -28,8 +28,8 @@ const i18n = {
 
         if (translation) {
             if (_params) {
-                Object.keys(_params).reduce((_translation, _paramKey) => {
-                    return translation.replace(`{{${_paramKey}}}`, _params[_paramKey]);
+                translation = Object.keys(_params).reduce((_translation, _paramKey) => {
+                    return _translation.replace(`{{${_paramKey}}}`, _params[_paramKey]);
                 }, translation);
             }
         } else {
