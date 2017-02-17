@@ -2,7 +2,7 @@
 
 // node dependencies
 const url = require("url");
-const {deepifyObject} = require("../../lib/resquetHelpers");
+const {deepifyObject} = require("../../lib/requestHelpers");
 
 /**
  *
