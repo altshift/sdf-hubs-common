@@ -13,6 +13,13 @@ const apiKeyStatuses = {
     quotaExceeded: "quota-exceeded"
 };
 
+const rightsMatrix = {
+    get: ["read", "write"],
+    put: ["write"],
+    post: ["write"],
+    "delete": ["write"]
+};
+
 /**
  * Return the object when key is not found
  * @returns {object} The key status info
@@ -31,7 +38,8 @@ function validKey(_apiKey) {
         apiKeyModel: _apiKey,
         limit: _apiKey.usageLimit,
         remaining: _apiKey.usageLimit - _apiKey.usageCount,
-        status: apiKeyStatuses.ok
+        status: apiKeyStatuses.ok,
+        rights: _apiKey.rights
     };
 }
 
@@ -97,6 +105,32 @@ function saveApiKey(_apiKeyModel) {
 }
 
 /**
+ *
+ * @param {Array} _operationPath
+ * @param {string} _userRights
+ * @returns {boolean} true if user has the rights to perform this operation, false otherwise
+ */
+function hasRights(_operationPath, _userRights) {
+    const isGetOperation = _operationPath.includes("get");
+    const isPutOperation = _operationPath.includes("put");
+    const isDeleteOperation = _operationPath.includes("delete");
+    const isPostOperation = _operationPath.includes("post");
+
+    if (isGetOperation) {
+        return rightsMatrix.get.includes(_userRights);
+    }
+    if (isPutOperation) {
+        return rightsMatrix.put.includes(_userRights);
+    }
+    if (isDeleteOperation) {
+        return rightsMatrix.delete.includes(_userRights);
+    }
+    if (isPostOperation) {
+        return rightsMatrix.post.includes(_userRights);
+    }
+}
+
+/**
  * @param {object} _request sails request
  * @param {object} _securityDef swagger security definition
  * @param {string} _apiKey the api key
@@ -111,11 +145,12 @@ function apiKeyCheck(_request, _securityDef, _apiKey, _callback) {
             checkApiKey(_apiKey)
                 .then((_apiKeyStatus) => {
                     _request.asData.apiKeyStatus = _apiKeyStatus;
-
                     if (_apiKeyStatus.status === apiKeyStatuses.notFound) {
                         return send401(_callback, `Invalid api_key: "${_apiKey}"`);
                     } else if (_apiKeyStatus.status === apiKeyStatuses.quotaExceeded) {
                         return send429(_callback, _apiKeyStatus.retryAfter);
+                    } else if (!hasRights(_request.swagger.operationPath, _apiKeyStatus.rights)) {
+                        return send401(_callback, `Invalid rights, you only have: "${_apiKeyStatus.rights}" rights`);
                     } else if (_apiKeyStatus.status === apiKeyStatuses.ok) {
                         _callback();
                     } else {

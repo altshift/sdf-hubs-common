@@ -5,6 +5,11 @@ const tokenStatuses = {
     inactive: "inactive"
 };
 
+const tokenRights = {
+    read: "read",
+    write: "write"
+};
+
 module.exports = {
     adapter: "postgres",
     attributes: {
@@ -26,6 +31,12 @@ module.exports = {
         usageLimit: {
             required: true,
             type: "integer"
+        },
+        rights: {
+            "in": Object.keys(tokenRights),
+            defaultsTo: tokenRights.read,
+            required: true,
+            type: "string"
         },
         usedAt: {type: "date"}
     },
