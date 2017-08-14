@@ -185,31 +185,37 @@ function buildAssociationTasks(_state) {
     return () => {
         const {collection, newValues, oldValues} = _state;
         const {associations} = collection;
+        const hasGetAssociationPopulateKey = typeof collection.getAssociationPopulateKey === "function";
 
-        _state.associationTasks = associations.map((_association) => {
-            const {alias} = _association;
-            const newIds = newValues[alias] || [];
-            const oldIds = oldValues && oldValues.toJSON()[alias] || [];
-            const idsToDelete = valuesOnlyInFirst(oldIds, newIds);
-            const idsToCreate = valuesOnlyInFirst(newIds, oldIds);
-            let associationCollection;
+        _state.associationTasks = associations
+            .filter(() => {
+                return hasGetAssociationPopulateKey
+                        && collection.getAssociationPopulateKey();
+            })
+            .map((_association) => {
+                const {alias} = _association;
+                const newIds = newValues[alias] || [];
+                const oldIds = oldValues && oldValues.toJSON()[alias] || [];
+                const idsToDelete = valuesOnlyInFirst(oldIds, newIds);
+                const idsToCreate = valuesOnlyInFirst(newIds, oldIds);
+                let associationCollection;
 
-            if (typeof collection.getAssociationCollection === "function") {
-                associationCollection = collection.getAssociationCollection(_association.collection);
-            } else {
-                const assocColName = _association.collection.charAt(0).toUpperCase()
-                                + _association.collection.slice(1);
+                if (typeof collection.getAssociationCollection === "function") {
+                    associationCollection = collection.getAssociationCollection(_association.collection);
+                } else {
+                    const assocColName = _association.collection.charAt(0).toUpperCase()
+                                    + _association.collection.slice(1);
 
-                associationCollection = global[assocColName];
-            }
+                    associationCollection = global[assocColName];
+                }
 
-            return {
-                association: _association,
-                collection: associationCollection,
-                idsToCreate,
-                idsToDelete
-            };
-        });
+                return {
+                    association: _association,
+                    collection: associationCollection,
+                    idsToCreate,
+                    idsToDelete
+                };
+            });
     };
 }
 
