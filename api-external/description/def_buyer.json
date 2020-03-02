@@ -1,0 +1,10 @@
+{
+    "type": "object",
+    "description": "Represent a user that would buy products on the hubs with ability to log in",
+    "title": "Buyer",
+    "allOf": [
+        { "$ref": "./def_account.json" },
+        { "$ref": "./part_common_buyer.json" }
+
+    ]
+}
