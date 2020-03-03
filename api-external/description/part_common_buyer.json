@@ -1,0 +1,176 @@
+{
+    "type": "object",
+    "description": "Buyer common values between foodhub and winehub",
+    "required": [
+        "corporateName",
+        "mainAddress",
+        "country",
+        "emailAddress"
+    ],
+    "properties": {
+        "corporateName": {
+            "type": "string",
+            "description": "Corporate name"
+        },
+        "businessTradeName": {
+            "type": "string",
+            "description": "Business trade name"
+        },
+        "mainAddress": {
+            "type": "string",
+            "description": "Main postal address"
+        },
+        "city": {
+            "type": "string",
+            "description": "City address"
+        },
+        "areaCode": {
+            "type": "string",
+            "description": "Area code used internationally, postal code for France"
+        },
+        "country": {
+            "type": "string",
+            "description": "ISO code of the address Country, **must exist** in **<a target='blank' href='/docs/#!/default/get_country'>/country</a>** (it also provides the full list of default available country)"
+        },
+        "phoneNumber": {
+            "type": "string",
+            "format": "phone",
+            "description": "Phone number International format"
+        },
+        "fax": {
+            "type": "string",
+            "format": "phone",
+            "description": "Fax number International format"
+        },
+        "emailAddress": {
+            "type": "string",
+            "format": "email",
+            "description": "Email address of the buyer account, must be a proper mail format"
+        },
+        "mainContactLastName": {
+            "type": "string",
+            "description": "Last name of the main contact"
+        },
+        "mainContactFirstName": {
+            "type": "string",
+            "description": "First name of the main contact"
+        },
+        "mainContactEmail": {
+            "type": "string",
+            "format": "email",
+            "description": "Email address of the main contact, must be a proper mail format"
+        },
+        "mainContactDirectPhoneNumber": {
+            "type": "string",
+            "format": "phone",
+            "description": "Phone number International format"
+        },
+        "mainContactMobilePhoneNumber": {
+            "type": "string",
+            "format": "phone",
+            "description": "Mobile Phone number International format"
+        },
+        "mainContactFunction": {
+            "type": "string",
+            "description": "Function or role of the main contact"
+        },
+        "mainContactSpeakEnglish": {
+            "type": "boolean",
+            "description": "Is the main contact speaking English"
+        },
+        "mainContactSpeakFrench": {
+            "type": "boolean",
+            "description": "Is the main contact speaking French"
+        },
+        "mainContactSpeakGerman": {
+            "type": "boolean",
+            "description": "Is the main contact speaking German"
+        },
+        "mainContactSpeakSpanish": {
+            "type": "boolean",
+            "description": "Is the main contact speaking Spanish"
+        },
+        "mainContactSpeakOther": {
+            "type": "string",
+            "description": "Other languages spoken by the main contact"
+        },
+        "secondContactLastName": {
+            "type": "string",
+            "description": "Last name of the second contact"
+        },
+        "secondContactFirstName": {
+            "type": "string",
+            "description": "First name of the second contact"
+        },
+        "secondContactEmail": {
+            "type": "string",
+            "format": "email",
+            "description": "Email address of the second contact, must be a proper mail format"
+        },
+        "secondContactDirectPhoneNumber": {
+            "type": "string",
+            "format": "phone",
+            "description": "Phone number International format"
+        },
+        "secondContactMobilePhoneNumber": {
+            "type": "string",
+            "format": "phone",
+            "description": "Mobile Phone number International format"
+        },
+        "secondContactFunction": {
+            "type": "string",
+            "description": "Function or role of the second contact"
+        },
+        "secondContactSpeakEnglish": {
+            "type": "boolean",
+            "description": "Is the second contact speaking English"
+        },
+        "secondContactSpeakFrench": {
+            "type": "boolean",
+            "description": "Is the second contact speaking French"
+        },
+        "secondContactSpeakGerman": {
+            "type": "boolean",
+            "description": "Is the second contact speaking German"
+        },
+        "secondContactSpeakSpanish": {
+            "type": "boolean",
+            "description": "Is the second contact speaking Spanish"
+        },
+        "secondContactSpeakOther": {
+            "type": "string",
+            "description": "Other languages spoken by the second contact"
+        },
+        "websiteUrl": {
+            "type": "string",
+            "format": "url",
+            "description": "Buyer Website url, url format"
+        },
+        "companyCreationDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Create date of the company"
+        },
+        "belongsToGroup": {
+            "type": "boolean",
+            "description": "Is the Buyers belonging to a group"
+        },
+        "groupName": {
+            "type": "string",
+            "description": "Group name the Buyer belongs to"
+        },
+        "specializeLowerEnd": {
+            "type": "boolean",
+            "description": "Does the buyer specialize in lower end"
+        },
+        "specializeMidRange": {
+            "type": "boolean",
+            "description": "Does the buyer specialize in mid range"
+        },
+        "specializePremium": {
+            "type": "boolean",
+            "description": "Does the buyer specialize in Premium"
+        }
+
+    }
+}

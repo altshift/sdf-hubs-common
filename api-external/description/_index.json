@@ -3,7 +3,7 @@
     "info": {
         "title": "Hubs Api",
         "description": "API for using hubs data externally.",
-        "version": "0.1.0",
+        "version": "0.2.0",
         "license": {
           "name": "TODO Licence sdfd?",
           "url": "http://todourl.com"
@@ -36,11 +36,16 @@
         "/countries": { "$ref": "./static/path_countries.json" },
         "/countries/{name}": { "$ref": "./static/path_countryById.json" },
         "/producers": { "$ref": "./path_producer.json" },
-        "/producers/{id}": { "$ref": "./path_producerById.json" }
+        "/producers/{id}": { "$ref": "./path_producerById.json" },
+        "/buyers": { "$ref": "./path_buyer.json" },
+        "/buyers/{id}": { "$ref": "./path_buyerById.json" }
     },
     "definitions": {
       "Country": {
         "$ref": "./static/def_country.json"
+      },
+      "Buyer": {
+        "$ref": "./def_buyer.json"
       }
     }
 }
