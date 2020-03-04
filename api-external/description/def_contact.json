@@ -1,0 +1,21 @@
+{
+    "type": "object",
+    "description": "Represent a producer added as a contact by a buyer on a hub",
+    "title": "Contact",
+    "allOf": [
+        { "$ref": "./part_model.json" },
+        {
+            "properties": {
+                "ref_buyer": {
+                    "type": "integer",
+                    "description": "Unique id of the buyer who added the contact, **must exist** and can be retrieved in **<a target='blank' href='#!/Buyer/get_buyers'>/Buyers</a>**"
+                },
+                "ref_producer": {
+                    "type": "integer",
+                    "description": "Unique id of the producer who was added as a contact, **must exist** and can be retrieved in **<a target='blank' href='#!/Producer/get_producers'>/Producers</a>**"
+                }
+            }
+        }
+
+    ]
+}

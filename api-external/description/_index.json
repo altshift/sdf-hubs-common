@@ -26,7 +26,7 @@
     ],
     "basePath": "/api/v1",
     "schemes": [
-      "https"
+      "https", "http"
     ],
     "consumes": [
       "application/json"
@@ -38,7 +38,8 @@
         "/producers": { "$ref": "./path_producer.json" },
         "/producers/{id}": { "$ref": "./path_producerById.json" },
         "/buyers": { "$ref": "./path_buyer.json" },
-        "/buyers/{id}": { "$ref": "./path_buyerById.json" }
+        "/buyers/{id}": { "$ref": "./path_buyerById.json" },
+        "/contacts": { "$ref": "./path_contact.json" }
     },
     "definitions": {
       "Country": {
@@ -46,6 +47,9 @@
       },
       "Buyer": {
         "$ref": "./def_buyer.json"
+      },
+      "Contact": {
+        "$ref": "./def_contact.json"
       }
     }
 }
