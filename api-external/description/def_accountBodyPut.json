@@ -14,6 +14,14 @@
             "type": "string",
             "enum": ["fr", "en", "zh"],
             "description": "Language code for preferred account of the account one language among fr, en and zh"
+        },
+        "acceptMailSentLog": {
+            "type": "boolean",
+            "description": "Does the user accept that all the mail sent to them are logged in database (mandatory to signup), should always be true"
+        },
+        "acceptSearchAndNavigationLog": {
+            "type": "boolean",
+            "description": "Does the user accept that all their search history and navigation history are logged in database (optional, default to true)"
         }
     }
 }
