@@ -22,6 +22,10 @@
         "acceptSearchAndNavigationLog": {
             "type": "boolean",
             "description": "Does the user accept that all their search history and navigation history are logged in database (optional, default to true)"
-        }
+        },
+        "agreeWithTermOfUse": {
+            "type": "boolean",
+            "description": "Does the user accept the terme of use, should always be true, would have blocked or block signup overwise"
+        }     
     }
 }
