@@ -45,10 +45,10 @@ const i18n = {
 
     pSetLanguage(_language = "fr", _forceReload) {
         return new Promise((_resolve, _reject) => {
+            this.currentLanguage = _language;
+
             if (_forceReload || !this.allLoadedDict[_language]) {
                 const pDict = this.pGetFileContentForLanguage(_language);
-
-                this.currentLanguage = _language;
 
                 pDict
                     .then(($dictionary) => {
