@@ -24,6 +24,14 @@ const i18n = {
     },
 
     translate(_key, _params) {
+        const isProdDb = global.sails.config.connections.isProdDb;
+        if (!isProdDb) {
+            const recetteKey = "recette." + _key;
+            if (i18n.exists(recetteKey)) {
+                _key = recetteKey;
+            }
+        }
+
         let translation = this.dictionnary[_key];
 
         if (translation) {
