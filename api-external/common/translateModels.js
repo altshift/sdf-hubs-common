@@ -2,6 +2,7 @@
 const vm = require("vm");
 const {StringDecoder} = require("string_decoder");
 const {s3GetObject} = require("../../lib/amazonClient");
+const staticValues = require("../../../api/common/staticValues");
 const amazonConfig = require("../../../config/amazoneAWS");
 
 const decoder = new StringDecoder("utf8");
@@ -18,9 +19,8 @@ function getTranslationFiles(_languages) {
         const key = `public/common/sdf-i18n-${_languageCode}.js`;
 
         return new Promise((_resolve, _reject) => {
-            s3GetObject("foodhub", amazonConfig.bucketVersioned, key, amazonConfig.amazoneClient.region)
+            s3GetObject(staticValues.APP, amazonConfig.bucketVersioned, key, amazonConfig.amazoneClient.region)
                 .then((_fileContent) => {
-                    console.log("s3GetObject", key)
                     const context = {
                         define($deps, $fn) {
                             return $fn();
