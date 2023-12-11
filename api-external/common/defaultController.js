@@ -34,9 +34,6 @@ const {cdn} = require("../../../config/publicConfig");
  * @param {function} [_options.transformJsonModels] Called synchronously with Array of jsonified models
  * data before being sent to the client
  * @param {function} [_options.onError] Called when an error occurs in controller
- * @param {object} [_options.s3Config] amazon s3 configs
- * @param {object} _options.s3Config.translationBucket amazon s3 bucket where to find translation files
- * @param {object} _options.s3Config.client connected amazon s3 client
  * @returns {object} A rest controller with default behaviour
  */
 function generateDefaultController(_options = {}) {
@@ -145,9 +142,7 @@ function generateDefaultController(_options = {}) {
             .then(() => populate(collection.findOne(controllerInfo.data), collection))
             .then(completeRelativeUrl(cdn, collection, collectionName))
             .then(translateModelsAsync(
-                    collection,
-                    s3Config.client,
-                    s3Config.translationBucket
+                    collection
                 ))
             .then(test404Async(`GET: Unable to find item with ${idKey} '${idValue}' `
                         + `from '${collectionName}'`))
@@ -199,9 +194,7 @@ function generateDefaultController(_options = {}) {
             })
             .then(completeRelativeUrl(cdn, collection, collectionName))
             .then(translateModelsAsync(
-                collection,
-                s3Config.client,
-                s3Config.translationBucket
+                collection
             ))
             .then(finalizeAll)
             .then((_result) => {

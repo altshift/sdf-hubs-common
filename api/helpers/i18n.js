@@ -6,7 +6,7 @@
  */
 "use strict";
 
-const rAmazoneClient = require("aws-sdk");
+const {s3GetObject} = require("../../lib/amazonClient");
 const StringDecoder = require("string_decoder").StringDecoder;
 const decoder = new StringDecoder("utf8");
 
@@ -15,10 +15,9 @@ const i18n = {
     currentLanguage: "",
     dictionnary: {},
 
-    setupAmazon(_amazoneConfig) {
+    setupAmazon(_amazoneConfig, app) {
         this.amazoneConfig = _amazoneConfig;
-        rAmazoneClient.config.update(_amazoneConfig.amazoneClient);
-        this.s3Client = new rAmazoneClient.S3();
+        this.app = app;
 
         return this;
     },
@@ -84,22 +83,22 @@ const i18n = {
                 Key: `public/common/sdf-i18n-${$language}.js`
             };
 
-            this.s3Client.getObject(params, (_error, _fileContent) => {
-                if (_error) {
-                    _reject(_error);
-                } else {
-                    let dict = null;
+            s3GetObject(this.app, params.Bucket, params.Key, this.amazoneConfig.amazoneClient.region)
+            .then((_fileContent) => {
+                let dict = null;
 
-                    (function isolator() {
-                        function define(_deps, _fn) {
-                            return _fn();
-                        }
+                (function isolator() {
+                    function define(_deps, _fn) {
+                        return _fn();
+                    }
 
-                        dict = eval(decoder.write(_fileContent.Body));
-                    })();
+                    dict = eval(decoder.write(_fileContent)) || {};
+                })();
 
-                    _resolve(dict);
-                }
+                _resolve(dict);
+            })
+            .fail(function (_error) {
+                _reject(_error);
             });
         });
     },

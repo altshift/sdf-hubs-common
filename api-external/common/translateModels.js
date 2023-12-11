@@ -1,31 +1,26 @@
 "use strict";
 const vm = require("vm");
 const {StringDecoder} = require("string_decoder");
+const {s3GetObject} = require("../../lib/amazonClient");
+const amazonConfig = require("../../../config/amazoneAWS");
 
 const decoder = new StringDecoder("utf8");
 const translationDicts = {};
 
 /**
- * Get the translations for all the languages
+ * Get the translations for all the requested languages
  *
- * @param {object} _amazonS3Client Amazon s3 Client
- * @param {object} _amazonBucket Amazon s3 Vucket where to find the translation files
  * @param {string[]} _languages array of language keys
  * @returns {object} the promise returning the translated model
  */
-function getTranslationFiles(_amazonS3Client, _amazonBucket, _languages) {
+function getTranslationFiles(_languages) {
     const allPromises = _languages.map((_languageCode) => {
-        const params = {
-            Bucket: String(_amazonBucket),
-            Key: `public/common/sdf-i18n-${_languageCode}.js`
-        };
+        const key = `public/common/sdf-i18n-${_languageCode}.js`;
 
         return new Promise((_resolve, _reject) => {
-            _amazonS3Client.getObject(params, (_error, _fileContent) => {
-                if (_error) {
-                    translationDicts[_languageCode] = null;
-                    _reject(_error);
-                } else {
+            s3GetObject("foodhub", amazonConfig.bucketVersioned, key, amazonConfig.amazoneClient.region)
+                .then((_fileContent) => {
+                    console.log("s3GetObject", key)
                     const context = {
                         define($deps, $fn) {
                             return $fn();
@@ -36,8 +31,11 @@ function getTranslationFiles(_amazonS3Client, _amazonBucket, _languages) {
 
                     translationDicts[_languageCode] = translationDict;
                     _resolve();
-                }
-            });
+                })
+                .fail((_error) => {
+                    translationDicts[_languageCode] = null;
+                    _reject(_error);
+                });
         });
     });
 
@@ -82,17 +80,15 @@ function translateModel(_model, _keyToTranslate, _languageDicts, _translationPre
  *
  * @param {object[]} _models List of models
  * @param {object} _collection waterline collection used for query
- * @param {object} _amazonS3Client Amazon s3 Client
- * @param {object} _amazonBucket Amazon s3 Bucket where to find the translation files
  * @returns {object} the promise returning the translated models
  */
-function translateModels(_models, _collection, _amazonS3Client, _amazonBucket) {
+function translateModels(_models, _collection) {
     const keyToTranslate = _collection.keyToTranslate;
     const translationPrefix = _collection.translationPrefix;
     let promise;
 
     if (keyToTranslate) {
-        promise = getTranslationFiles(_amazonS3Client, _amazonBucket, ["fr", "en", "zh"])
+        promise = getTranslationFiles(["fr", "en", "zh"])
             .then((_languagePacks) => {
                 _models.forEach((_model) => translateModel(
                                                 _model,
@@ -114,15 +110,13 @@ function translateModels(_models, _collection, _amazonS3Client, _amazonBucket) {
  * Translate models if needed
  *
  * @param {object} _collection waterline collection used for query
- * @param {object} _amazonS3Client Amazon s3 Client
- * @param {object} _amazonBucket Amazon s3 Vucket where to find the translation files
  * @returns {object} the promise returning the translated models
  */
-function translateModelsAsync(_collection, _amazonS3Client, _amazonBucket) {
+function translateModelsAsync(_collection) {
     return (_models) => {
         const isArray = Array.isArray(_models);
 
-        return translateModels(isArray ? _models : [_models], _collection, _amazonS3Client, _amazonBucket)
+        return translateModels(isArray ? _models : [_models], _collection)
             .then((_results) => isArray ? _results : _results[0]);
     };
 }
